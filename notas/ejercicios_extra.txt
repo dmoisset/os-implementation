@@ -1,0 +1,18 @@
+Notas 
+
+Proyecto 0
+
+* ejercicio para determinar si el planificador es apropiativo (preemptive).
+  (2 threads que hacen x++ y x-- y 1 que hace assert 0 <= x <= 2)
+
+* ejercicio para probar el tamaño del stack haciendo llamadas recursivas.
+
+* ejercio para reventar el stack (como el kernel está abajo, moverse hacia
+  la dirección 0).
+
+  [ comparar código con y sin optimización ]
+
+* buscar el thread idle en GeekOS y comparar con la implementación de Linux
+  (arch/x86/kernel/process-32.c cpu_idle()).
+  Linux i386 Boot Code HOWTO
+
