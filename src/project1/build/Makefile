@@ -248,6 +248,9 @@ diskc.img : $(USER_PROGS) $(BUILDFAT)
 	$(ZEROFILE) $@ 20480
 	$(BUILDFAT) $@ $(USER_PROGS)
 
+diskc.vdi: diskc.img
+	VBoxManage convertdd $^ $@
+
 # Tool to build PFAT filesystem images
 $(BUILDFAT) : $(PROJECT_ROOT)/src/tools/buildFat.c $(PROJECT_ROOT)/include/geekos/pfat.h
 	$(HOST_CC) $(CC_GENERAL_OPTS) -I$(PROJECT_ROOT)/include $(PROJECT_ROOT)/src/tools/buildFat.c -o $@
