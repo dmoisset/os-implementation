@@ -60,3 +60,5 @@ http://book.git-scm.com/
 Una presentación que muestra cómo funciona git internamente.
 http://git-plumbing-preso.heroku.com/
 
+"Git is the next Unix" o una "Oda a git"
+http://www.advogato.org/person/apenwarr/diary/371.html
