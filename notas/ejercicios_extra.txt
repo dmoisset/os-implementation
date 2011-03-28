@@ -1,18 +1,32 @@
-Notas 
+Notas
 
 Proyecto 0
 
-* ejercicio para determinar si el planificador es apropiativo (preemptive).
-  (2 threads que hacen x++ y x-- y 1 que hace assert 0 <= x <= 2)
+* Lectura.
+  Leer la hacking guide hasta la página 19 (Project 0).
+  Leer operadores bitwise para implementar las máscaras que te permiten manejar los eventos KEY_RELEASE_FLAG, etc.
+  Leer como las funciones pueden ser pasadas como parámetros, o sea que son punteros puros y duros, y ya que estamos, algo que leí pasaron hace poco y está relacionado, https://profiles.google.com/jlenton/posts/VfwexyLrN4g
 
-* ejercicio para probar el tamaño del stack haciendo llamadas recursivas.
+* Que tocamos del Makefile y porque.
+  Ver las diferencias de Makefile entre: geekos-0.3.0 original del sitio, geekos-0.3.0 de github y geekos de googlecode.
+  En particular investigar que son las opciones -fno-builtin, -m32, -nostdlib
 
-* ejercio para reventar el stack (como el kernel está abajo, moverse hacia
+
+* Ejercicio para determinar si el planificador es apropiativo (preemptive).
+  (2 threads que hacen while(1){x++; x--;} y 1 que hace assert(0 <= x <= 2) )
+  Mirar el assembler generado antes de deducir cualquier cosa.
+
+* Ejercicio para probar el tamaño del stack haciendo llamadas recursivas.
+
+* Ejercio para reventar el stack (como el kernel está abajo, moverse hacia
   la dirección 0).
 
   [ comparar código con y sin optimización ]
 
-* buscar el thread idle en GeekOS y comparar con la implementación de Linux
+* Buscar el thread idle en GeekOS y comparar con la implementación de Linux
   (arch/x86/kernel/process-32.c cpu_idle()).
   Linux i386 Boot Code HOWTO
 
+* Ver cuanto mezcla el scheduler, generar 2 hilos uno que imprime "a" infinitamente y el otro "b".
+  Comprobar que en la salida haya interleaving. Notar que esto no invalida el experimento anterior.
+  Agregar luego de cada impresión una llamada al scheduler para que cambie a otro hilo, típicamente se llama "yield" o algo parecido.
