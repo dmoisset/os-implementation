@@ -1,0 +1,20 @@
+
+* Leer como se castean pedazos de memoria a estructuras.
+  Leer aritmética de punteros para cuando se apunta a una estructura.
+
+* Leer la especificación de ELF en su parte de ejecución.
+
+* Usar readelf y objdump para mirar por dentro build/user/a.exe.
+  Mirar como el Makefile genera este archivo.
+
+* La implementación tiene que ser *robusta* para que acepte solo lo que se puede ejecutar y para el resto que devuelva error.
+  Pensar como hacer esto en C sin meter muchos nesting levels.
+  Notar que la implementación que no revisa nada, carga el struct Exe_Format y siempre devuelve 0, tiene nada más que alrededor de 10 líneas.
+
+* Pensar en un hack si lo anterior no se hace de manera exhaustiva.
+
+* Probar en este nuevo contexto programas que hagan abuso del stack (llamadas recursivas infinitas) y escritura fuera de los lugares permitidos.
+  ¿Estamos igual que en el Proyect 0? ¿Qué cambió?
+
+* GeekOS tiene un bug, no imprime "Hi ! This is the second string\n".
+  Resolverlo.
