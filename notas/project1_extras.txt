@@ -16,5 +16,7 @@
 * Probar en este nuevo contexto programas que hagan abuso del stack (llamadas recursivas infinitas) y escritura fuera de los lugares permitidos.
   ¿Estamos igual que en el Proyect 0? ¿Qué cambió?
 
-* GeekOS tiene un bug, no imprime "Hi ! This is the second string\n".
+** GeekOS tiene un bug, no imprime "Hi ! This is the second string\n".
   Resolverlo.
+
+* Leer "A Whirlwind Tutorial on Creating Really Teensy ELF Executables for Linux" <http://www.muppetlabs.com/~breadbox/software/tiny/teensy.html>.
