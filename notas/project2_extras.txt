@@ -1,0 +1,3 @@
+
+* Leer "Some Final Breezes (a postscript)" <http://www.muppetlabs.com/~breadbox/software/tiny/teensyps.html>.
+  La sección que habla de porque "the executable bit can be dropped from the p_flags field", relacionado con el uso de los selector registers.
