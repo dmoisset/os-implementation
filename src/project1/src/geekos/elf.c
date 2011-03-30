@@ -30,6 +30,44 @@
 int Parse_ELF_Executable(char *exeFileData, ulong_t exeFileLength,
     struct Exe_Format *exeFormat)
 {
-    TODO("Parse an ELF executable image");
+    /* Start sanity tests before anything */
+
+    /* The standard states that the first 4 bytes of an ELF file must
+     * be: 0x7F, 'E', 'L', 'F'
+     */
+    if (exeFileData[0] != 0x007f || exeFileData[1] != 'E' || 
+            exeFileData[2] != 'L' || exeFileData[3] != 'F'){
+        return -1;
+    }
+
+    elfHeader *elfh = (elfHeader *) exeFileData;
+
+    /* Check that exeFileLength is big enough at least to contain ELF header
+     * and program headers */
+    if (exeFileLength <= ((ulong_t) elfh->ehsize + 
+                ((ulong_t) elfh->phnum * (ulong_t) elfh->phentsize)))
+        return -2;
+
+    /* Check the ELF has less than EXE_MAX_SEGMENTS */
+    if (elfh->phnum > EXE_MAX_SEGMENTS)
+       return -3; 
+
+    programHeader *ph = (programHeader *) (exeFileData + elfh->phoff);
+    int i = 0;
+ 
+    exeFormat->numSegments = (int) elfh->phnum;
+    exeFormat->entryAddr = (ulong_t) elfh->entry;
+
+    for (i = 0; i < exeFormat->numSegments; i++) {
+        exeFormat->segmentList[i].offsetInFile = (ulong_t) ph->offset;
+        exeFormat->segmentList[i].lengthInFile = (ulong_t) ph->fileSize;
+        exeFormat->segmentList[i].startAddress = (ulong_t) ph->paddr;
+        exeFormat->segmentList[i].sizeInMemory = (ulong_t) ph->memSize;
+        exeFormat->segmentList[i].protFlags    = (int) ph->flags;
+
+        ph++;
+    } 
+
+    return 0;
 }
 
