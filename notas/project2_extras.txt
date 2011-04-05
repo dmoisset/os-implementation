@@ -1,3 +1,15 @@
 
 * Leer "Some Final Breezes (a postscript)" <http://www.muppetlabs.com/~breadbox/software/tiny/teensyps.html>.
   La sección que habla de porque "the executable bit can be dropped from the p_flags field", relacionado con el uso de los selector registers.
+
+* Probar que la segmentación realmente funciona, intentar quebrar el kernel haciendo overrun de la memoria, del stack.
+
+* Aprovechar debilidades de las syscalls para al menos crashear el kernel. Parchar las debilidades.
+
+** Usar el bit Present y Accessed para hacer detecciones de ejecución y/o segment swapping.
+
+* Manejar cuando no haya más lugar para procesos de usuario en la GDT (ENOMEM o parecido).
+
+* ¿Se podría definir un layout de segmentos que no se superpongan de forma tal que no haya manera que se mezclen datos y programas?
+
+** Investigar como [NaCl](http://code.google.com/chrome/nativeclient/) utiliza ia32 segmentation.
