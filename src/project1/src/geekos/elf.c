@@ -27,9 +27,49 @@
  *   and entry address; to be filled in
  * @return 0 if successful, < 0 on error
  */
-int Parse_ELF_Executable(char *exeFileData, ulong_t exeFileLength,
-    struct Exe_Format *exeFormat)
+int Parse_ELF_Executable(char *exeFileData,
+			 ulong_t exeFileLength,
+			 struct Exe_Format *exeFormat)
 {
-    TODO("Parse an ELF executable image");
-}
+  KASSERT(exeFileData!=NULL);
+  KASSERT(exeFileLength>=0);
+  KASSERT(exeFormat!=NULL);
 
+  elfHeader *elf = (elfHeader *) exeFileData;
+
+  KASSERT(elf->ident[0] == 0x7f);
+  KASSERT(elf->ident[1] == 'E');
+  KASSERT(elf->ident[2] == 'L');
+  KASSERT(elf->ident[3] == 'F');
+  KASSERT(elf->type = 0x2);
+  KASSERT(elf->version == 0x1);
+  KASSERT(elf->phnum > 0);
+  KASSERT(elf->machine = 0x3);
+  KASSERT(elf->entry < exeFileLength);
+  KASSERT(elf->phoff < exeFileLength);
+  KASSERT(elf->shoff < exeFileLength);
+  KASSERT(elf->ehsize == sizeof(elfHeader));
+  KASSERT(elf->phentsize == sizeof(programHeader));
+
+  exeFormat->entryAddr = elf->entry;
+  exeFormat->numSegments = elf->phnum;
+
+  int i;
+  for (i = 0; i < elf->phnum; i++) {
+
+    programHeader *program =
+      (programHeader *) (exeFileData + elf->phoff + elf->phentsize * i);
+    
+    KASSERT(program->offset < exeFileLength);
+    KASSERT(program->fileSize < exeFileLength);
+    KASSERT(program->memSize < exeFileLength);
+
+    exeFormat->segmentList[i].offsetInFile = program->offset;
+    exeFormat->segmentList[i].lengthInFile = program->fileSize;
+    exeFormat->segmentList[i].startAddress = program->vaddr;
+    exeFormat->segmentList[i].sizeInMemory = program->memSize;
+    exeFormat->segmentList[i].protFlags = program->flags;
+  }
+
+  return 0;
+}
