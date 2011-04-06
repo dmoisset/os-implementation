@@ -26,7 +26,7 @@ Necesito
 * **Protección** (kernel vs. user).
 * Definir un **layout** para la memoria de usuario y poner allí los pedazos del ELF.
 * Aumentar los `kthread` con **información de procesos de usuarios**.
-* Definir la interface de inicio del proceso: **`int main(argc,argv)`**.
+* Definir la interface de inicio y fin del proceso con el kernel: **`int main(argc,argv)`**.
 * Definir la interface de comunicación del proceso con el kernel: **syscalls**.
 * **Lanzar** el proceso.
 * **Cambiar el mapa de memoria** cuando cambia el ctxt a un proceso de usuario.
@@ -54,11 +54,20 @@ Layout de memoria
 
 Hay que usar el ELF y `argc, argv` para definir el layout
 
-* Definir tamaño de la imagen de memoria.
+* Definir tamaño de la imagen del proceso.
 * Copiar los segmentos ELF.
-* Copiar `argc, argv` en algún lugar de la memoria.
+* Copiar `argc,argv` en algún lugar de la memoria.
 * Dejar espacio para el stack.
 * ¿Y el heap? ¿Cuánta memoria dejamos para alocación dinámica? (`brk()`)
+
+---
+
+Layout de memoria (2)
+=====================
+
+Le faltaría la **lista de argumentos**.
+
+![elf layout](elfdiagram.jpg)
 
 ---
 
@@ -70,7 +79,7 @@ El hilo de kernel que manejará el proceso de usuario tiene información extra.
 * Memory layout.
     * LDT
     * Selectores
-* Tamaño de la imagen de memoria.
+* Tamaño de la imagen ejecutable.
 * Punto de entrada.
 * Ubicación de `argc, argv`.
 
@@ -80,19 +89,43 @@ El hilo de kernel que manejará el proceso de usuario tiene información extra.
 Lanzar el proceso
 =================
 
-Dejar todo como si lo hubieran interrumpido en el punto de entrada y encolarlo.
+Dejar todo como si lo hubieran interrumpido en el punto de entrada y encolarlo en *runnable*.
 
 ---
 
 Cambiar de contexto
 ===================
 
-Cambiar el memory layout, o sea la segmenación.
+Cambiar entre los  memory layout de cada proceso, o sea la segmenación.
 
 ---
 
 Que hay que completar
 =====================
+
+---
+
+Varios `TODO()`
+===============
+
+Hay más, pero para esta *primera parte* solo estos.
+
+    !c
+    kthread.c:    TODO("Create a new thread to execute in user mode");
+    --
+    kthread.c:    TODO("Start user thread");
+    --
+    main.c:    TODO("Spawn the init process");
+    --
+    user.c:    TODO("Spawn a process by reading an executable from a filesystem");
+    --
+    user.c:    TODO("Switch to a new user address space, if necessary");
+    --
+    userseg.c:    TODO("Destroy a User_Context");
+    --
+    userseg.c:    TODO("Load a user executable into a user memory space using segmentation");
+    --
+    userseg.c:    TODO("Switch to user address space using segmentation/LDT");
 
 ---
 
@@ -127,6 +160,33 @@ Cargar el programa en memoria
 
 ---
 
+Argumentos de la línea de comandos
+==================================
+
+Crear un `struct Argument_Block` usando:
+
+* `Get_Argument_Block_Size()`
+* `Format_Argument_Block()`
+* Copiar este cachito de memoria a la imagen en memoria del proceso.
+
+El proceso cuando se lo lanza recibe el puntero al `struct Argument_Block` por `ESI`.
+
+`libc/entry.c`:
+
+    !c
+    void _Entry(void)
+    {
+        struct Argument_Block *argBlock;
+
+        /* The argument block pointer is in the ESI register. */
+        __asm__ __volatile__ ("movl %%esi, %0" : "=r" (argBlock));
+
+        /* Call main(), and then exit with whatever value it returns. */
+        Exit(main(argBlock->argc, argBlock->argv));
+    }
+
+---
+
 Crear contexto de usuario
 =========================
 
@@ -151,9 +211,14 @@ Lanzar el proceso
 
 Hay que llenar `Start_User_Thread()`.
 
+* Crear un hilo de kernel
+* Establecer el contexto de usuario (es un argumento).
+* Inicializar el stack.
+* Marcarla como *runnable*.
+
 La complejidad está en `Setup_User_Thread()`:
 
-* Dejar todo como si lo hubieran interrumpido (stack).
+* Dejar el stack como si lo hubieran interrumpido.
 * Ver `int.h:struct Interrupt_State` para ver cual es el formato que se espera en el stack.
 * Poner en cada campo el valor que se espera, ej: en el `EIP` la `struct Exe_Format.entryAddr`.
 
@@ -168,7 +233,16 @@ Asi deja el ia32 el stack luego de una interrupción:
 Cambio de contexto
 ==================
 
-Todo está hecho salvo la parte donde *cambia la imagen de memoria*.
+`user.c:Switch_To_User_Context()`
+
+* Solo actuar si `userContext!=NULL`.
+* Cambiar al `LDT` de este proceso de usuario.
+* *Move the stack pointer one page*. !?
+    * El único punto donde utiliza `TSS`.
+    * `tss.c:Set_Kernel_Stack_Pointer()`.
+    * Solo utiliza un `TSS`.
+
+La parte importante es donde **cambia la imagen del proceso**
 
 `userseg.c:Switch_To_Address_Space()`:
 
@@ -177,8 +251,8 @@ Todo está hecho salvo la parte donde *cambia la imagen de memoria*.
 
 ---
 
-Recuerden
-=========
+Consejos
+========
 
 * Hasta que no completen todos los `TODO()`, no van a tener **nada** funcionando.
 * Hay que agregar pocas líneas (100?), asi que programen de manera muy cuidadosa.
@@ -186,6 +260,7 @@ Recuerden
     * Escriban código sencillo.
     * Usen `KASSERT` para todas las condiciones que están suponiendo.
     * De última `Print()` puede ser de utilidad.
+* Es muy útil un editor que parsee el código todo el tiempo y pueda saltar a la definición de los símbolos, tenga autocompletar, etc. .
 
 ---
 
@@ -208,6 +283,10 @@ Cambiar `main.c:INIT_PROGRAM` para lanzar `null.exe`.
       return 0;
     }
 
+Que nunca retorne, porque la syscall `Exit()` no está implementada.
+
+(esta es la última parte de la comunicación entre el kernel y el proceso, el **valor de retorno**)
+
 ---
 
 Como pruebo más cosas
@@ -215,10 +294,13 @@ Como pruebo más cosas
 
 **No** se debería poder desde userspace:
 
+* Comprobar que se pasan bien `argc, argv`.
 * Llamar a interrupciones que no sean la `INT90`.
-* Ejecutar instrucciones protegidas como in y outs a puertos o `lgdt` :) .
+* Ejecutar instrucciones protegidas como `in, outs` a puertos o `lgdt` :) .
 * Escribir en el código.
-* Irme de los límites tanto en datos como en código.
+* Irme de los límites en: código, stack y datos.
+
+Estamos testeando que hayamos establecido correctamente la **segmentación** y el **modo protegido**.
 
 ---
 
@@ -254,6 +336,6 @@ Imprescindibles
 Recomendados
 ============
 
+* `proyect1/src/geekos/lprog.c`.
 * Tom Shanley, *Protected Mode Software Architecture*, Mindshare, 1996.
-
 
