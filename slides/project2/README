@@ -1,0 +1,13 @@
+
+To compile Markdown (.md) files to HTML5, use landslide.
+
+https://github.com/adamzap/landslide
+
+
+Install it using either:
+
+pip install landslide
+
+or
+
+easy_install landslide

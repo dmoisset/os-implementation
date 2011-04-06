@@ -7,11 +7,11 @@ Projecto 2: procesos de usuario
 Resumen:
 ========
 
-* Motivación
-* Por arriba
-* Que hay que completar
-* Como seguimos (entrega intermedia, 2 clases más)
-* Material de Lectura
+* Motivación.
+* Por arriba.
+* Que hay que completar.
+* Como seguimos (entrega intermedia, 2 clases más).
+* Material de Lectura.
 
 ---
 
@@ -27,9 +27,9 @@ Necesito
 * Definir un **layout** para la memoria de usuario y poner allí los pedazos del ELF.
 * Aumentar los `kthread` con **información de procesos de usuarios**.
 * Definir la interface de inicio y fin del proceso con el kernel: **`int main(argc,argv)`**.
-* Definir la interface de comunicación del proceso con el kernel: **syscalls**.
 * **Lanzar** el proceso.
 * **Cambiar el mapa de memoria** cuando cambia el ctxt a un proceso de usuario.
+* Definir la interface de comunicación del proceso con el kernel: **syscalls**.
 
 ---
 
@@ -58,7 +58,7 @@ Hay que usar el ELF y `argc, argv` para definir el layout
 * Copiar los segmentos ELF.
 * Copiar `argc,argv` en algún lugar de la memoria.
 * Dejar espacio para el stack.
-* ¿Y el heap? ¿Cuánta memoria dejamos para alocación dinámica? (`brk()`)
+* ¿Y el heap? ¿Cuánta memoria dejamos para alocación dinámica -- `brk()`?
 
 ---
 
@@ -81,6 +81,7 @@ El hilo de kernel que manejará el proceso de usuario tiene información extra.
     * Selectores
 * Tamaño de la imagen ejecutable.
 * Punto de entrada.
+* Donde está el stack.
 * Ubicación de `argc, argv`.
 
 
@@ -89,14 +90,18 @@ El hilo de kernel que manejará el proceso de usuario tiene información extra.
 Lanzar el proceso
 =================
 
-Dejar todo como si lo hubieran interrumpido en el punto de entrada y encolarlo en *runnable*.
+Dejar todo como si lo hubieran interrumpido en el punto de entrada.
+
+Encolarlo en *runnable*.
 
 ---
 
 Cambiar de contexto
 ===================
 
-Cambiar entre los  memory layout de cada proceso, o sea la segmenación.
+Cambiar entre los memory layout de cada proceso, o sea la segmentación.
+
+Toquetear un poco el stack del kernel.
 
 ---
 
@@ -110,22 +115,71 @@ Varios `TODO()`
 
 Hay más, pero para esta *primera parte* solo estos.
 
+`kthread.c`
+-----------
     !c
-    kthread.c:    TODO("Create a new thread to execute in user mode");
-    --
-    kthread.c:    TODO("Start user thread");
-    --
-    main.c:    TODO("Spawn the init process");
-    --
-    user.c:    TODO("Spawn a process by reading an executable from a filesystem");
-    --
-    user.c:    TODO("Switch to a new user address space, if necessary");
-    --
-    userseg.c:    TODO("Destroy a User_Context");
-    --
-    userseg.c:    TODO("Load a user executable into a user memory space using segmentation");
-    --
-    userseg.c:    TODO("Switch to user address space using segmentation/LDT");
+    void Setup_User_Thread(
+        struct Kernel_Thread* kthread, struct User_Context* userContext) {
+        TODO("Create a new thread to execute in user mode");
+    }
+
+    struct Kernel_Thread*
+        Start_User_Thread(struct User_Context* userContext, bool detached) {
+        TODO("Start user thread");
+    }
+
+`user.c`
+--------
+
+    !c
+    int Spawn(const char *program, const char *command, struct Kernel_Thread **pThread)
+    {
+        TODO("Spawn a process by reading an executable from a filesystem");
+    }
+
+    void Switch_To_User_Context(struct Kernel_Thread* kthread, struct Interrupt_State* state)
+    {
+        TODO("Switch to a new user address space, if necessary");
+    }
+
+---
+
+Siguen los `TODO()`
+===================
+
+`main.c`
+--------
+
+    !c
+    static void Spawn_Init_Process(void)
+    {
+        TODO("Spawn the init process");
+    }
+
+`userseg.c`
+-----------
+
+    !c
+    /* TODO: Implement
+    static struct User_Context* Create_User_Context(ulong_t size)
+    */
+
+    void Destroy_User_Context(struct User_Context* userContext)
+    {
+        TODO("Destroy a User_Context");
+    }
+
+    int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
+        struct Exe_Format *exeFormat, const char *command,
+        struct User_Context **pUserContext)
+    {
+        TODO("Load a user executable into a user memory space using segmentation");
+    }
+
+    void Switch_To_Address_Space(struct User_Context *userContext)
+    {
+        TODO("Switch to user address space using segmentation/LDT");
+    }
 
 ---
 
@@ -134,7 +188,7 @@ Crear un proceso
 
 Crea y lanza un proceso de usuario a partir de:
 
-* Un path en el FS que apunta a un ELF
+* Un path en el FS que apunta a un ELF.
 * Una lista de argumentos.
 
 `Spawn()`:
@@ -328,7 +382,7 @@ Material de Lectura
 Imprescindibles
 ===================
 
-* "*GeekOS Hacking Guide*" (aunque no dice mucho).
+* "*GeekOS Hacking Guide*" (tal vez demasiado breve).
 * Proyecto de [CMSC 412](http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/), 2005.
 * Las [filminas](http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/proj2.ppt) con más información.
 * *Intel® 64 and IA-32 Architectures Software Developer's Manual Volume 3A: System Programming Guide*, [Part 1, Chapter 3](http://www.intel.com/Assets/PDF/manual/253668.pdf).

@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<!--
+  Copyright 2010 Google Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+  Original slides: Marcin Wichary (mwichary@google.com)
+  Modifications: Ernest Delgado (ernestd@google.com)
+                 Alex Russell (slightlyoff@chromium.org)
+
+  landslide modifications: Adam Zapletal (adamzap@gmail.com)
+                           Nicolas Perriault (nperriault@gmail.com)
+-->
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Projecto 2: procesos de usuario</title>
+    <!-- Styles -->
+    
+    <link rel="stylesheet" media="print" href="file:///usr/local/lib/python2.6/dist-packages/landslide/themes/default/css/print.css">
+    <link rel="stylesheet" media="screen, projection" href="file:///usr/local/lib/python2.6/dist-packages/landslide/themes/default/css/screen.css">
+    
+    <!-- /Styles -->
+    <!-- Javascripts -->
+    
+    <script type="text/javascript" src="file:///usr/local/lib/python2.6/dist-packages/landslide/themes/default/js/slides.js"></script>
+    
+    <!-- /Javascripts -->
+</head>
+<body>
+  <div class="presentation">
+    <div class="slides">
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Projecto 2: procesos de usuario</h1></header>
+          
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            1/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Resumen:</h1></header>
+          
+          
+          <section><ul>
+<li>Motivación.</li>
+<li>Por arriba.</li>
+<li>Que hay que completar.</li>
+<li>Como seguimos (entrega intermedia, 2 clases más).</li>
+<li>Material de Lectura.</li>
+</ul></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            2/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Motivación: ¿Qué necesito para tener procesos de usuario?</h1></header>
+          
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            3/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h2>Necesito</h2></header>
+          
+          
+          <section><ul>
+<li><strong>Protección</strong> (kernel vs. user).</li>
+<li>Definir un <strong>layout</strong> para la memoria de usuario y poner allí los pedazos del ELF.</li>
+<li>Aumentar los <code>kthread</code> con <strong>información de procesos de usuarios</strong>.</li>
+<li>Definir la interface de inicio y fin del proceso con el kernel: <strong><code>int main(argc,argv)</code></strong>.</li>
+<li><strong>Lanzar</strong> el proceso.</li>
+<li><strong>Cambiar el mapa de memoria</strong> cuando cambia el ctxt a un proceso de usuario.</li>
+<li>Definir la interface de comunicación del proceso con el kernel: <strong>syscalls</strong>.</li>
+</ul></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            4/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Por arriba</h1></header>
+          
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            5/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Protección</h1></header>
+          
+          
+          <section><ul>
+<li>Estamos en modo protegido, luego hay segmentación.</li>
+<li>Diferenciar <strong>Logical</strong> address vs. <strong>Linear</strong> address.<ul>
+<li>process vs. kernel memory.</li>
+</ul>
+</li>
+<li>Definir una <code>LDT</code> con los segmentos básicos para correr el proceso usuario.<ul>
+<li>Segmento de <strong>datos</strong>, segmento de <strong>código</strong>.</li>
+</ul>
+</li>
+</ul></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            6/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Layout de memoria</h1></header>
+          
+          
+          <section><p>Hay que usar el ELF y <code>argc, argv</code> para definir el layout</p>
+<ul>
+<li>Definir tamaño de la imagen del proceso.</li>
+<li>Copiar los segmentos ELF.</li>
+<li>Copiar <code>argc,argv</code> en algún lugar de la memoria.</li>
+<li>Dejar espacio para el stack.</li>
+<li>¿Y el heap? ¿Cuánta memoria dejamos para alocación dinámica -- <code>brk()</code>?</li>
+</ul></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            7/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Layout de memoria (2)</h1></header>
+          
+          
+          <section><p>Le faltaría la <strong>lista de argumentos</strong>.</p>
+<p><img src="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/elfdiagram.jpg" /></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            8/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Contexto de Usuario</h1></header>
+          
+          
+          <section><p>El hilo de kernel que manejará el proceso de usuario tiene información extra.</p>
+<ul>
+<li>Memory layout.<ul>
+<li>LDT</li>
+<li>Selectores</li>
+</ul>
+</li>
+<li>Tamaño de la imagen ejecutable.</li>
+<li>Punto de entrada.</li>
+<li>Donde está el stack.</li>
+<li>Ubicación de <code>argc, argv</code>.</li>
+</ul></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            9/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Lanzar el proceso</h1></header>
+          
+          
+          <section><p>Dejar todo como si lo hubieran interrumpido en el punto de entrada.</p>
+<p>Encolarlo en <em>runnable</em>.</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            10/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Cambiar de contexto</h1></header>
+          
+          
+          <section><p>Cambiar entre los memory layout de cada proceso, o sea la segmentación.</p>
+<p>Toquetear un poco el stack del kernel.</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            11/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Que hay que completar</h1></header>
+          
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            12/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide has_code">
+        <div class="inner">
+          
+          <header><h1>Varios <code>TODO()</code></h1></header>
+          
+          
+          <section><p>Hay más, pero para esta <em>primera parte</em> solo estos.</p>
+<h2><code>kthread.c</code></h2>
+<div class="highlight"><pre><span class="lineno">1</span> <span class="kt">void</span> <span class="nf">Setup_User_Thread</span><span class="p">(</span>
+<span class="lineno">2</span>     <span class="k">struct</span> <span class="n">Kernel_Thread</span><span class="o">*</span> <span class="n">kthread</span><span class="p">,</span> <span class="k">struct</span> <span class="n">User_Context</span><span class="o">*</span> <span class="n">userContext</span><span class="p">)</span> <span class="p">{</span>
+<span class="lineno">3</span>     <span class="n">TODO</span><span class="p">(</span><span class="s">&quot;Create a new thread to execute in user mode&quot;</span><span class="p">);</span>
+<span class="lineno">4</span> <span class="p">}</span>
+<span class="lineno">5</span> 
+<span class="lineno">6</span> <span class="k">struct</span> <span class="n">Kernel_Thread</span><span class="o">*</span>
+<span class="lineno">7</span>     <span class="nf">Start_User_Thread</span><span class="p">(</span><span class="k">struct</span> <span class="n">User_Context</span><span class="o">*</span> <span class="n">userContext</span><span class="p">,</span> <span class="n">bool</span> <span class="n">detached</span><span class="p">)</span> <span class="p">{</span>
+<span class="lineno">8</span>     <span class="n">TODO</span><span class="p">(</span><span class="s">&quot;Start user thread&quot;</span><span class="p">);</span>
+<span class="lineno">9</span> <span class="p">}</span>
+</pre></div>
+
+<h2><code>user.c</code></h2>
+<div class="highlight"><pre><span class="lineno">1</span> <span class="kt">int</span> <span class="nf">Spawn</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">program</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">command</span><span class="p">,</span> <span class="k">struct</span> <span class="n">Kernel_Thread</span> <span class="o">**</span><span class="n">pThread</span><span class="p">)</span>
+<span class="lineno">2</span> <span class="p">{</span>
+<span class="lineno">3</span>     <span class="n">TODO</span><span class="p">(</span><span class="s">&quot;Spawn a process by reading an executable from a filesystem&quot;</span><span class="p">);</span>
+<span class="lineno">4</span> <span class="p">}</span>
+<span class="lineno">5</span> 
+<span class="lineno">6</span> <span class="kt">void</span> <span class="nf">Switch_To_User_Context</span><span class="p">(</span><span class="k">struct</span> <span class="n">Kernel_Thread</span><span class="o">*</span> <span class="n">kthread</span><span class="p">,</span> <span class="k">struct</span> <span class="n">Interrupt_State</span><span class="o">*</span> <span class="n">state</span><span class="p">)</span>
+<span class="lineno">7</span> <span class="p">{</span>
+<span class="lineno">8</span>     <span class="n">TODO</span><span class="p">(</span><span class="s">&quot;Switch to a new user address space, if necessary&quot;</span><span class="p">);</span>
+<span class="lineno">9</span> <span class="p">}</span>
+</pre></div>
+</section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            13/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide has_code">
+        <div class="inner">
+          
+          <header><h1>Siguen los <code>TODO()</code></h1></header>
+          
+          
+          <section><h2><code>main.c</code></h2>
+<div class="highlight"><pre><span class="lineno">1</span> <span class="k">static</span> <span class="kt">void</span> <span class="nf">Spawn_Init_Process</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="lineno">2</span> <span class="p">{</span>
+<span class="lineno">3</span>     <span class="n">TODO</span><span class="p">(</span><span class="s">&quot;Spawn the init process&quot;</span><span class="p">);</span>
+<span class="lineno">4</span> <span class="p">}</span>
+</pre></div>
+
+<h2><code>userseg.c</code></h2>
+<div class="highlight"><pre><span class="lineno"> 1</span> <span class="cm">/* TODO: Implement</span>
+<span class="lineno"> 2</span> <span class="cm">static struct User_Context* Create_User_Context(ulong_t size)</span>
+<span class="lineno"> 3</span> <span class="cm">*/</span>
+<span class="lineno"> 4</span> 
+<span class="lineno"> 5</span> <span class="kt">void</span> <span class="nf">Destroy_User_Context</span><span class="p">(</span><span class="k">struct</span> <span class="n">User_Context</span><span class="o">*</span> <span class="n">userContext</span><span class="p">)</span>
+<span class="lineno"> 6</span> <span class="p">{</span>
+<span class="lineno"> 7</span>     <span class="n">TODO</span><span class="p">(</span><span class="s">&quot;Destroy a User_Context&quot;</span><span class="p">);</span>
+<span class="lineno"> 8</span> <span class="p">}</span>
+<span class="lineno"> 9</span> 
+<span class="lineno">10</span> <span class="kt">int</span> <span class="nf">Load_User_Program</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">exeFileData</span><span class="p">,</span> <span class="n">ulong_t</span> <span class="n">exeFileLength</span><span class="p">,</span>
+<span class="lineno">11</span>     <span class="k">struct</span> <span class="n">Exe_Format</span> <span class="o">*</span><span class="n">exeFormat</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">command</span><span class="p">,</span>
+<span class="lineno">12</span>     <span class="k">struct</span> <span class="n">User_Context</span> <span class="o">**</span><span class="n">pUserContext</span><span class="p">)</span>
+<span class="lineno">13</span> <span class="p">{</span>
+<span class="lineno">14</span>     <span class="n">TODO</span><span class="p">(</span><span class="s">&quot;Load a user executable into a user memory space using segmentation&quot;</span><span class="p">);</span>
+<span class="lineno">15</span> <span class="p">}</span>
+<span class="lineno">16</span> 
+<span class="lineno">17</span> <span class="kt">void</span> <span class="nf">Switch_To_Address_Space</span><span class="p">(</span><span class="k">struct</span> <span class="n">User_Context</span> <span class="o">*</span><span class="n">userContext</span><span class="p">)</span>
+<span class="lineno">18</span> <span class="p">{</span>
+<span class="lineno">19</span>     <span class="n">TODO</span><span class="p">(</span><span class="s">&quot;Switch to user address space using segmentation/LDT&quot;</span><span class="p">);</span>
+<span class="lineno">20</span> <span class="p">}</span>
+</pre></div>
+</section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            14/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Crear un proceso</h1></header>
+          
+          
+          <section><p>Crea y lanza un proceso de usuario a partir de:</p>
+<ul>
+<li>Un path en el FS que apunta a un ELF.</li>
+<li>Una lista de argumentos.</li>
+</ul>
+<p><code>Spawn()</code>:</p>
+<ul>
+<li><code>Read_Fully()</code> : lista</li>
+<li><code>Parse_ELF_Executable()</code> : proyecto 1</li>
+<li><code>userseg.c:Load_User_Program()</code> : <strong>completar</strong></li>
+<li><code>kthread.c:Start_User_Thread()</code> : <strong>completar</strong></li>
+</ul></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            15/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Cargar el programa en memoria</h1></header>
+          
+          
+          <section><p><code>userseg.c:Load_User_Program()</code></p>
+<ul>
+<li>Establece el tamaño de la imagen que contendrá el proceso.</li>
+<li><strong>Crea el contexto de usuario dentro del kthread</strong>.</li>
+<li>Copia los segmentos ELF a la memoria.</li>
+<li>Copia los argumentos a la memoria.</li>
+<li>(probablemente) Resetea pedazos de memoria.</li>
+<li>Termina de cargar el contexto de usuario.</li>
+</ul></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            16/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide has_code">
+        <div class="inner">
+          
+          <header><h1>Argumentos de la línea de comandos</h1></header>
+          
+          
+          <section><p>Crear un <code>struct Argument_Block</code> usando:</p>
+<ul>
+<li><code>Get_Argument_Block_Size()</code></li>
+<li><code>Format_Argument_Block()</code></li>
+<li>Copiar este cachito de memoria a la imagen en memoria del proceso.</li>
+</ul>
+<p>El proceso cuando se lo lanza recibe el puntero al <code>struct Argument_Block</code> por <code>ESI</code>.</p>
+<p><code>libc/entry.c</code>:</p>
+<div class="highlight"><pre><span class="lineno"> 1</span> <span class="kt">void</span> <span class="nf">_Entry</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="lineno"> 2</span> <span class="p">{</span>
+<span class="lineno"> 3</span>     <span class="k">struct</span> <span class="n">Argument_Block</span> <span class="o">*</span><span class="n">argBlock</span><span class="p">;</span>
+<span class="lineno"> 4</span> 
+<span class="lineno"> 5</span>     <span class="cm">/* The argument block pointer is in the ESI register. */</span>
+<span class="lineno"> 6</span>     <span class="n">__asm__</span> <span class="n">__volatile__</span> <span class="p">(</span><span class="s">&quot;movl %%esi, %0&quot;</span> <span class="o">:</span> <span class="s">&quot;=r&quot;</span> <span class="p">(</span><span class="n">argBlock</span><span class="p">));</span>
+<span class="lineno"> 7</span> 
+<span class="lineno"> 8</span>     <span class="cm">/* Call main(), and then exit with whatever value it returns. */</span>
+<span class="lineno"> 9</span>     <span class="n">Exit</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="n">argBlock</span><span class="o">-&gt;</span><span class="n">argc</span><span class="p">,</span> <span class="n">argBlock</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">));</span>
+<span class="lineno">10</span> <span class="p">}</span>
+</pre></div>
+</section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            17/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Crear contexto de usuario</h1></header>
+          
+          
+          <section><p>Aumentar <code>struct Kernel_Thread</code> con el contexto de usuario: <code>struct User_Context</code></p>
+<p>Rellenar <code>{Create,Destroy}_User_Context()</code>.</p>
+<p>En la creación del contexto:</p>
+<ul>
+<li>Crea la memoria del proceso.</li>
+<li>Definir la <code>LDT</code> correspondiente:<ul>
+<li>Delicado</li>
+<li>Entender bien segmentación en ia32.</li>
+<li>Las <a href="http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/proj2.ppt">filminas CMSC 412, 2005</a> son muy valiosas.</li>
+</ul>
+</li>
+</ul>
+<p>En la próxima clase vamos a hablar de <strong>Segmentación en ia32</strong>, para que este punto quede más claro.</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            18/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Lanzar el proceso</h1></header>
+          
+          
+          <section><p>Hay que llenar <code>Start_User_Thread()</code>.</p>
+<ul>
+<li>Crear un hilo de kernel</li>
+<li>Establecer el contexto de usuario (es un argumento).</li>
+<li>Inicializar el stack.</li>
+<li>Marcarla como <em>runnable</em>.</li>
+</ul>
+<p>La complejidad está en <code>Setup_User_Thread()</code>:</p>
+<ul>
+<li>Dejar el stack como si lo hubieran interrumpido.</li>
+<li>Ver <code>int.h:struct Interrupt_State</code> para ver cual es el formato que se espera en el stack.</li>
+<li>Poner en cada campo el valor que se espera, ej: en el <code>EIP</code> la <code>struct Exe_Format.entryAddr</code>.</li>
+</ul></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            19/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          
+          <section><p>Asi deja el ia32 el stack luego de una interrupción:</p>
+<p><img src="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/Figure6-4.jpg" /></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            20/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Cambio de contexto</h1></header>
+          
+          
+          <section><p><code>user.c:Switch_To_User_Context()</code></p>
+<ul>
+<li>Solo actuar si <code>userContext!=NULL</code>.</li>
+<li>Cambiar al <code>LDT</code> de este proceso de usuario.</li>
+<li><em>Move the stack pointer one page</em>. !?<ul>
+<li>El único punto donde utiliza <code>TSS</code>.</li>
+<li><code>tss.c:Set_Kernel_Stack_Pointer()</code>.</li>
+<li>Solo utiliza un <code>TSS</code>.</li>
+</ul>
+</li>
+</ul>
+<p>La parte importante es donde <strong>cambia la imagen del proceso</strong></p>
+<p><code>userseg.c:Switch_To_Address_Space()</code>:</p>
+<ul>
+<li><code>lldt</code> con el selector de la LDT que le corresponde a ese proceso.</li>
+<li>inline assembler!</li>
+</ul></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            21/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Consejos</h1></header>
+          
+          
+          <section><ul>
+<li>Hasta que no completen todos los <code>TODO()</code>, no van a tener <strong>nada</strong> funcionando.</li>
+<li>Hay que agregar pocas líneas (100?), asi que programen de manera muy cuidadosa.</li>
+<li>Debuggear es penoso:<ul>
+<li>Escriban código sencillo.</li>
+<li>Usen <code>KASSERT</code> para todas las condiciones que están suponiendo.</li>
+<li>De última <code>Print()</code> puede ser de utilidad.</li>
+</ul>
+</li>
+<li>Es muy útil un editor que parsee el código todo el tiempo y pueda saltar a la definición de los símbolos, tenga autocompletar, etc. .</li>
+</ul></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            22/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide has_code">
+        <div class="inner">
+          
+          <header><h1>Como pruebo</h1></header>
+          
+          
+          <section><p>Cambiar <code>main.c:INIT_PROGRAM</code> para lanzar <code>null.exe</code>.</p>
+<div class="highlight"><pre><span class="lineno"> 1</span> <span class="cm">/*</span>
+<span class="lineno"> 2</span> <span class="cm"> * A test program for GeekOS user mode</span>
+<span class="lineno"> 3</span> <span class="cm"> */</span>
+<span class="lineno"> 4</span> 
+<span class="lineno"> 5</span> <span class="cp">#include &lt;process.h&gt;</span>
+<span class="lineno"> 6</span> 
+<span class="lineno"> 7</span> <span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span><span class="o">**</span> <span class="n">argv</span><span class="p">)</span>
+<span class="lineno"> 8</span> <span class="p">{</span>
+<span class="lineno"> 9</span>   <span class="n">Null</span><span class="p">();</span>
+<span class="lineno">10</span>   <span class="k">for</span><span class="p">(;;);</span>
+<span class="lineno">11</span>   <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="lineno">12</span> <span class="p">}</span>
+</pre></div>
+
+<p>Que nunca retorne, porque la syscall <code>Exit()</code> no está implementada.</p>
+<p>(esta es la última parte de la comunicación entre el kernel y el proceso, el <strong>valor de retorno</strong>)</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            23/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Como pruebo más cosas</h1></header>
+          
+          
+          <section><p><strong>No</strong> se debería poder desde userspace:</p>
+<ul>
+<li>Comprobar que se pasan bien <code>argc, argv</code>.</li>
+<li>Llamar a interrupciones que no sean la <code>INT90</code>.</li>
+<li>Ejecutar instrucciones protegidas como <code>in, outs</code> a puertos o <code>lgdt</code> :) .</li>
+<li>Escribir en el código.</li>
+<li>Irme de los límites en: código, stack y datos.</li>
+</ul>
+<p>Estamos testeando que hayamos establecido correctamente la <strong>segmentación</strong> y el <strong>modo protegido</strong>.</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            24/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Como seguimos</h1></header>
+          
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            25/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Planes para las 3 semanas</h1></header>
+          
+          
+          <section><ul>
+<li>El proyecto se divide en dos partes:<ul>
+<li>Hacer funcionar <code>/c/null.exe</code> (2 semanas).</li>
+<li>Implementar el resto de los syscalls para que funcione <code>/c/shell.exe</code> (1 semana).</li>
+</ul>
+</li>
+<li>Clase 2: <strong>ia32 segmentation</strong>.</li>
+<li>Clase 3: <strong>syscall ifce</strong>.</li>
+</ul></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            26/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Material de Lectura</h1></header>
+          
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            27/28
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy2.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Imprescindibles</h1></header>
+          
+          
+          <section><ul>
+<li>"<em>GeekOS Hacking Guide</em>" (tal vez demasiado breve).</li>
+<li>Proyecto de <a href="http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/">CMSC 412</a>, 2005.</li>
+<li>Las <a href="http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/proj2.ppt">filminas</a> con más información.</li>
+<li><em>Intel® 64 and IA-32 Architectures Software Developer's Manual Volume 3A: System Programming Guide</em>, <a href="http://www.intel.com/Assets/PDF/manual/253668.pdf">Part 1, Chapter 3</a>.</li>
+</ul>
+<h1>Recomendados</h1>
+<ul>
+<li><code>proyect1/src/geekos/lprog.c</code>.</li>
+<li>Tom Shanley, <em>Protected Mode Software Architecture</em>, Mindshare, 1996.</li>
+</ul></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/nicolasw/ImplSistOp11_support/geekos-0.3.0/slides/project2/proy2.md">proy2.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            28/28
+          </aside>
+        </footer>
+      </div>
+      
+    </div>
+  </div>
+  
+  <div id="toc" class="sidebar hidden">
+    <h2>Table of Contents</h2>
+    <table>
+      <caption>Table of Contents</caption>
+            
+      <tr id="toc-row-1">
+        <th><a href="#slide1">Projecto 2: procesos de usuario</a></th>
+        <td><a href="#slide1">1</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-2">
+        <th><a href="#slide2">Resumen:</a></th>
+        <td><a href="#slide2">2</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-3">
+        <th><a href="#slide3">Motivación: ¿Qué necesito para tener procesos de usuario?</a></th>
+        <td><a href="#slide3">3</a></td>
+      </tr>
+      
+        
+        <tr id="toc-row-4" class="sub">
+          <th><a href="#slide4">Necesito</a></th>
+          <td><a href="#slide4">4</a></td>
+        </tr>
+        
+      
+            
+      <tr id="toc-row-5">
+        <th><a href="#slide5">Por arriba</a></th>
+        <td><a href="#slide5">5</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-6">
+        <th><a href="#slide6">Protección</a></th>
+        <td><a href="#slide6">6</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-7">
+        <th><a href="#slide7">Layout de memoria</a></th>
+        <td><a href="#slide7">7</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-8">
+        <th><a href="#slide8">Layout de memoria (2)</a></th>
+        <td><a href="#slide8">8</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-9">
+        <th><a href="#slide9">Contexto de Usuario</a></th>
+        <td><a href="#slide9">9</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-10">
+        <th><a href="#slide10">Lanzar el proceso</a></th>
+        <td><a href="#slide10">10</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-11">
+        <th><a href="#slide11">Cambiar de contexto</a></th>
+        <td><a href="#slide11">11</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-12">
+        <th><a href="#slide12">Que hay que completar</a></th>
+        <td><a href="#slide12">12</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-13">
+        <th><a href="#slide13">Varios <code>TODO()</code></a></th>
+        <td><a href="#slide13">13</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-14">
+        <th><a href="#slide14">Siguen los <code>TODO()</code></a></th>
+        <td><a href="#slide14">14</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-15">
+        <th><a href="#slide15">Crear un proceso</a></th>
+        <td><a href="#slide15">15</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-16">
+        <th><a href="#slide16">Cargar el programa en memoria</a></th>
+        <td><a href="#slide16">16</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-17">
+        <th><a href="#slide17">Argumentos de la línea de comandos</a></th>
+        <td><a href="#slide17">17</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-18">
+        <th><a href="#slide18">Crear contexto de usuario</a></th>
+        <td><a href="#slide18">18</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-19">
+        <th><a href="#slide19">Lanzar el proceso</a></th>
+        <td><a href="#slide19">19</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-21">
+        <th><a href="#slide21">Cambio de contexto</a></th>
+        <td><a href="#slide21">21</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-22">
+        <th><a href="#slide22">Consejos</a></th>
+        <td><a href="#slide22">22</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-23">
+        <th><a href="#slide23">Como pruebo</a></th>
+        <td><a href="#slide23">23</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-24">
+        <th><a href="#slide24">Como pruebo más cosas</a></th>
+        <td><a href="#slide24">24</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-25">
+        <th><a href="#slide25">Como seguimos</a></th>
+        <td><a href="#slide25">25</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-26">
+        <th><a href="#slide26">Planes para las 3 semanas</a></th>
+        <td><a href="#slide26">26</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-27">
+        <th><a href="#slide27">Material de Lectura</a></th>
+        <td><a href="#slide27">27</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-28">
+        <th><a href="#slide28">Imprescindibles</a></th>
+        <td><a href="#slide28">28</a></td>
+      </tr>
+      
+      
+    </table>
+  </div>
+  
+  <div id="help" class="sidebar hidden">
+    <h2>Help</h2>
+    <table>
+      <caption>Help</caption>
+      <tr>
+        <th>Table of Contents</th>
+        <td>t</td>
+      </tr>
+      <tr>
+        <th>Source Files</th>
+        <td>s</td>
+      </tr>
+      <tr>
+        <th>Slide Numbers</th>
+        <td>n</td>
+      </tr>
+      <tr>
+        <th>Notes</th>
+        <td>2</td>
+      </tr>
+      <tr>
+        <th>Help</th>
+        <td>h</td>
+      </tr>
+    </table>
+  </div>
+  <script>main()</script>
+</body>
+</html>
