@@ -10,6 +10,6 @@
 
 * Manejar cuando no haya más lugar para procesos de usuario en la GDT (ENOMEM o parecido).
 
-* ¿Se podría definir un layout de segmentos que no se superpongan de forma tal que no haya manera que se mezclen datos y programas?
+* ¿Se podría definir un layout de segmentos que no se superpongan de forma tal que no haya manera que se mezclen código, datos y stack?
 
 ** Investigar como [NaCl](http://code.google.com/chrome/nativeclient/) utiliza ia32 segmentation.
