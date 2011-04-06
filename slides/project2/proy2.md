@@ -45,7 +45,7 @@ Protección
 * Diferenciar **Logical** address vs. **Linear** address.
     * process vs. kernel memory.
 * Definir una `LDT` con los segmentos básicos para correr el proceso usuario.
-    * Segmento de datos, segmento de código.
+    * Segmento de **datos**, segmento de **código**.
 
 ---
 
@@ -65,7 +65,7 @@ Hay que usar el ELF y `argc, argv` para definir el layout
 Contexto de Usuario
 ===================
 
-El hilo de kernel que manejará el proceso de usuario tiene que contener información extra.
+El hilo de kernel que manejará el proceso de usuario tiene información extra.
 
 * Memory layout.
     * LDT
@@ -74,11 +74,6 @@ El hilo de kernel que manejará el proceso de usuario tiene que contener informa
 * Punto de entrada.
 * Ubicación de `argc, argv`.
 
-Aumentar `struct Kernel_Thread` con el contexto de usuario: `struct User_Context`
-
-
-* Create_User_Context
-* Destroy_User_Context
 
 ---
 
@@ -101,22 +96,87 @@ Que hay que completar
 
 ---
 
-`Spawn()`
-=========
+Crear un proceso
+================
 
-Crea un proceso de usuario con la imagen de un ELF cargando del FS.
+Crea y lanza un proceso de usuario a partir de:
 
-* `Read_Fully` (done)
-* `Parse_ELF_Executable` (proj1)
-* `userseg.c:Load_User_Program` (completar)
-    * Completa `struct Kernel_Thread` con el contexto de usuario: `struct User_Context`.
-    * Crea la memoria del proceso.
-    * Establece la segmentación.
-    * Copia los segmentos ELF a la memoria.
-    * Copia los argumentos a la memoria.
-* `Start_User_Thread` (completar)
+* Un path en el FS que apunta a un ELF
+* Una lista de argumentos.
+
+`Spawn()`:
+
+* `Read_Fully()` : lista
+* `Parse_ELF_Executable()` : proyecto 1
+* `userseg.c:Load_User_Program()` : **completar**
+* `kthread.c:Start_User_Thread()` : **completar**
 
 ---
+
+Cargar el programa en memoria
+=============================
+
+`userseg.c:Load_User_Program()`
+
+* Establece el tamaño de la imagen que contendrá el proceso.
+* **Crea el contexto de usuario dentro del kthread**.
+* Copia los segmentos ELF a la memoria.
+* Copia los argumentos a la memoria.
+* (probablemente) Resetea pedazos de memoria.
+* Termina de cargar el contexto de usuario.
+
+---
+
+Crear contexto de usuario
+=========================
+
+Aumentar `struct Kernel_Thread` con el contexto de usuario: `struct User_Context`
+
+Rellenar `{Create,Destroy}_User_Context()`.
+
+En la creación del contexto:
+
+* Crea la memoria del proceso.
+* Definir la `LDT` correspondiente:
+    * Delicado
+    * Entender bien segmentación en ia32.
+    * Las [filminas CMSC 412, 2005](http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/proj2.ppt) son muy valiosas.
+
+En la próxima clase vamos a hablar de **Segmentación en ia32**, para que este punto quede más claro.
+
+---
+
+Lanzar el proceso
+=================
+
+Hay que llenar `Start_User_Thread()`.
+
+La complejidad está en `Setup_User_Thread()`:
+
+* Dejar todo como si lo hubieran interrumpido (stack).
+* Ver `int.h:struct Interrupt_State` para ver cual es el formato que se espera en el stack.
+* Poner en cada campo el valor que se espera, ej: en el `EIP` la `struct Exe_Format.entryAddr`.
+
+---
+
+Asi deja el ia32 el stack luego de una interrupción:
+
+![Stack after Interrupt](Figure6-4.jpg)
+
+---
+
+Cambio de contexto
+==================
+
+Todo está hecho salvo la parte donde *cambia la imagen de memoria*.
+
+`userseg.c:Switch_To_Address_Space()`:
+
+* `lldt` con el selector de la LDT que le corresponde a ese proceso.
+* inline assembler!
+
+---
+
 Recuerden
 =========
 
@@ -126,6 +186,39 @@ Recuerden
     * Escriban código sencillo.
     * Usen `KASSERT` para todas las condiciones que están suponiendo.
     * De última `Print()` puede ser de utilidad.
+
+---
+
+Como pruebo
+===========
+
+Cambiar `main.c:INIT_PROGRAM` para lanzar `null.exe`.
+
+    !c
+    /*
+     * A test program for GeekOS user mode
+     */
+
+    #include <process.h>
+
+    int main(int argc, char** argv)
+    {
+      Null();
+      for(;;);
+      return 0;
+    }
+
+---
+
+Como pruebo más cosas
+=====================
+
+**No** se debería poder desde userspace:
+
+* Llamar a interrupciones que no sean la `INT90`.
+* Ejecutar instrucciones protegidas como in y outs a puertos o `lgdt` :) .
+* Escribir en el código.
+* Irme de los límites tanto en datos como en código.
 
 ---
 
@@ -153,8 +246,14 @@ Material de Lectura
 Imprescindibles
 ===================
 
-* La "GeekOS Hacking Guide" (aunque no dice mucho).
-* Proyecto de [CMSC 412](http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/) del 2005.
+* "*GeekOS Hacking Guide*" (aunque no dice mucho).
+* Proyecto de [CMSC 412](http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/), 2005.
 * Las [filminas](http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/proj2.ppt) con más información.
-* Intel® 64 and IA-32 Architectures Software Developer's Manual Volume 3A: System Programming Guide, [Part 1, Chapter 3](http://www.intel.com/Assets/PDF/manual/253668.pdf).
+* *Intel® 64 and IA-32 Architectures Software Developer's Manual Volume 3A: System Programming Guide*, [Part 1, Chapter 3](http://www.intel.com/Assets/PDF/manual/253668.pdf).
+
+Recomendados
+============
+
+* Tom Shanley, *Protected Mode Software Architecture*, Mindshare, 1996.
+
 
