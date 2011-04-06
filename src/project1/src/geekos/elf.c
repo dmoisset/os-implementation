@@ -47,7 +47,7 @@ int Parse_ELF_Executable(char *exeFileData,
   KASSERT(elf->machine = 0x3);
   KASSERT(elf->entry < exeFileLength);
   KASSERT(elf->phoff < exeFileLength);
-  KASSERT(elf->shoff < exeFileLength);
+  KASSERT(elf->sphoff < exeFileLength);
   KASSERT(elf->ehsize == sizeof(elfHeader));
   KASSERT(elf->phentsize == sizeof(programHeader));
 
