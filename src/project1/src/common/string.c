@@ -54,6 +54,7 @@ int memcmp(const void *s1_, const void *s2_, size_t n)
 	    return cmp;
 	++s1;
 	++s2;
+	--n;
     }
 
     return 0;
