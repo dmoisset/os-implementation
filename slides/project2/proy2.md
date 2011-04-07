@@ -1,5 +1,5 @@
 
-Projecto 2: procesos de usuario
+Proyecto 2: procesos de usuario
 ===============================
 
 ---
