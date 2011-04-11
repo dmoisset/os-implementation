@@ -27,47 +27,49 @@
  *   and entry address; to be filled in
  * @return 0 if successful, < 0 on error
  */
-int Parse_ELF_Executable(char *exeFileData, ulong_t exeFileLength,
-    struct Exe_Format *exeFormat)
+int Parse_ELF_Executable(char *exeFileData,
+			 ulong_t exeFileLength,
+			 struct Exe_Format *exeFormat)
 {
-    /* Start sanity tests before anything */
+  KASSERT(exeFileData!=NULL);
+  KASSERT(exeFileLength>=0);
+  KASSERT(exeFormat!=NULL);
 
-    /* The standard states that the first 4 bytes of an ELF file must
-     * be: 0x7F, 'E', 'L', 'F'
-     */
-    if (exeFileData[0] != 0x007f || exeFileData[1] != 'E' || 
-            exeFileData[2] != 'L' || exeFileData[3] != 'F'){
-        return -1;
-    }
+  elfHeader *elf = (elfHeader *) exeFileData;
 
-    elfHeader *elfh = (elfHeader *) exeFileData;
+  KASSERT(elf->ident[0] == 0x7f);
+  KASSERT(elf->ident[1] == 'E');
+  KASSERT(elf->ident[2] == 'L');
+  KASSERT(elf->ident[3] == 'F');
+  KASSERT(elf->type = 0x2);
+  KASSERT(elf->version == 0x1);
+  KASSERT(elf->phnum > 0);
+  KASSERT(elf->machine = 0x3);
+  KASSERT(elf->entry < exeFileLength);
+  KASSERT(elf->phoff < exeFileLength);
+  KASSERT(elf->sphoff < exeFileLength);
+  KASSERT(elf->ehsize == sizeof(elfHeader));
+  KASSERT(elf->phentsize == sizeof(programHeader));
 
-    /* Check that exeFileLength is big enough at least to contain ELF header
-     * and program headers */
-    if (exeFileLength <= ((ulong_t) elfh->ehsize + 
-                ((ulong_t) elfh->phnum * (ulong_t) elfh->phentsize)))
-        return -2;
+  exeFormat->entryAddr = elf->entry;
+  exeFormat->numSegments = elf->phnum;
 
-    /* Check the ELF has less than EXE_MAX_SEGMENTS */
-    if (elfh->phnum > EXE_MAX_SEGMENTS)
-       return -3; 
+  int i;
+  for (i = 0; i < elf->phnum; i++) {
 
-    programHeader *ph = (programHeader *) (exeFileData + elfh->phoff);
-    int i = 0;
- 
-    exeFormat->numSegments = (int) elfh->phnum;
-    exeFormat->entryAddr = (ulong_t) elfh->entry;
+    programHeader *program =
+      (programHeader *) (exeFileData + elf->phoff + elf->phentsize * i);
+    
+    KASSERT(program->offset < exeFileLength);
+    KASSERT(program->fileSize < exeFileLength);
+    KASSERT(program->memSize < exeFileLength);
 
-    for (i = 0; i < exeFormat->numSegments; i++) {
-        exeFormat->segmentList[i].offsetInFile = (ulong_t) ph->offset;
-        exeFormat->segmentList[i].lengthInFile = (ulong_t) ph->fileSize;
-        exeFormat->segmentList[i].startAddress = (ulong_t) ph->paddr;
-        exeFormat->segmentList[i].sizeInMemory = (ulong_t) ph->memSize;
-        exeFormat->segmentList[i].protFlags    = (int) ph->flags;
+    exeFormat->segmentList[i].offsetInFile = program->offset;
+    exeFormat->segmentList[i].lengthInFile = program->fileSize;
+    exeFormat->segmentList[i].startAddress = program->vaddr;
+    exeFormat->segmentList[i].sizeInMemory = program->memSize;
+    exeFormat->segmentList[i].protFlags = program->flags;
+  }
 
-        ph++;
-    } 
-
-    return 0;
+  return 0;
 }
-
