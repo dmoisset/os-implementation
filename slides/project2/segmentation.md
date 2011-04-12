@@ -80,7 +80,7 @@ Muy buen [artículo](http://en.wikipedia.org/wiki/X86_memory_segmentation) en la
 * Modo protegido (4 niveles), MMU.
 * Direcciones físicas 24 bits (16MB), lógicas de 30 bits (1GB).
 * El gap ya no se cubrió con `segment<<4+offset`, usaron **segment selectors**:
-	* Idem registros de segmentos para implicit addressing: `CS`, `DS`, `ES`, `SS`.
+	* Idem registros de segmentos para implicit addressing: `CS`, `SS`, `DS`, `ES`.
 	* Una tres-upla *(índice, tabla, privilegio)*.
 	* Dos tablas:
 		* Global Descriptor Table -- [GDT](http://en.wikipedia.org/wiki/Global_Descriptor_Table)
@@ -110,15 +110,13 @@ Segmentación en ia32
 
 ---
 
-Conversión de lógico a lineal
+Conversión de lógica a lineal
 =============================
 
 ![Conversión logica a lineal](OSDI_Figure-4.27.jpg)
 
-Como la tripla *(base,limit,others)* es muy grande se utilizan dos tablas de **segment descriptors** (GDT, LDT), 
-indexada por **segment selectors**.
 
-![Segment Selector](Figure3-6.jpg)
+Veamos diferentes formas de usar la segmentación.
 
 ---
 
@@ -140,6 +138,35 @@ Multisegmentado
 
 ![Multi-segment](Figure3-4.jpg)
 
+---
+
+Segment Selectors
+=================
+
+Como la tripla *(base,limit,others)* es muy grande se utilizan dos tablas de **segment descriptors** (GDT, LDT), 
+indexada por **segment selectors**.
+
+![Segment Selector](Figure3-6.jpg)
+
+
+---
+
+Segment Descriptors
+===================
+
+![Segment Registers](Figure3-8.jpg)
+
+
+---
+
+Segment Registers
+=================
+
+![Segment Registers](Figure3-7.jpg)
+
+Adentro de los registros `CS`, `SS`, `DS`, `ES`, `FS`, `GS`.
+
+**Creo** que no hay forma explícita de nombrar un segment descriptor en un operando.
 
 ---
 
