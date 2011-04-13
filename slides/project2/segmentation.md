@@ -13,8 +13,8 @@ Resumen:
 
 ---
 
-Motivación histórica y desde los libros de texto
-================================================
+Motivación desde los libros e histórica
+=======================================
 
 ---
 
@@ -143,7 +143,7 @@ Multisegmentado
 Segment Selectors
 =================
 
-Como la tupla *(base,limit,accesscontrol)* es muy grande se utilizan dos tablas de **segment descriptors** (GDT, LDT), indexada por **segment selectors**.
+Como la tupla *(base,limit,accesscontrol)* es muy grande se utilizan dos tablas de **segment descriptors** (GDT, LDT), indexada por **segment selectors**: *(index, table, privilege)*.
 
 ![Segment Selector](Figure3-6.jpg)
 
@@ -156,7 +156,7 @@ Donde el RPL indica uno de los 4 niveles de protección.
 Segment Descriptors
 ===================
 
-Un lío de parámetros en 8 bytes tanto para escribir como para *leer*.
+Un lío de parámetros en 8 bytes tanto para escribir como para **leer**.
 Ya los veremos en detalle.
 
 ![Segment Registers](Figure3-8.jpg)
@@ -179,8 +179,8 @@ Adentro de los registros `CS`, `SS`, `DS`, `ES`, `FS`, `GS`, se **cachea** el se
 
 ¿Quién carga estos registros?
 -----------------------------
-* No las aplicaciones de usuario.
-* Si los linkers y loaders, asi como el SistOp.
+* **No**: aplicaciones de usuario.
+* **Si**: linkers, loaders, SistOp.
 
 ---
 
@@ -194,17 +194,21 @@ Hay dos tablas de *segment descriptors*:
 
 *Segment selector* tiene 13 bits de índice, un máximo de **8192 *segment descriptors* ** por tabla (64KB).
 
-¿Dónde están estas tablas?
---------------------------
+---
 
-* Registro GDTR. Instrucciones: `lgdt`, `sgdt`
+GDT y LDT ¿Dónde están?
+-----------------------
+
+* Registro `GDTR`. Instrucciones: `lgdt`, `sgdt`
 	* Operando: 32 bits *base* +  16 bits *limit*.
 	* Notar que cargar un *segment register* fuera del límite puede `#GP`!
 	
-* Registro LDTR. Instrucciones: [`lldt`](http://pdos.csail.mit.edu/6.828/2005/readings/i386/LLDT.htm), `sldt`:
+* Registro `LDTR`. Instrucciones: [`lldt`](http://pdos.csail.mit.edu/6.828/2005/readings/i386/LLDT.htm), `sldt`:
 	* Operando: 16 bits *segment selector* dentro de la GDT.
 	* Este *segment descriptor* debe estar marcado como LDT.
 	* De ahi se saca *base* + *limit* de la LDT.
+
+*Cuidado* para almacenar el `GDTR` (48bits) y el `LDTR` (16 bits), el destino tiene que estar **alineado**.
 
 ---
 
@@ -216,8 +220,8 @@ GDT y LDT (esquema)
 
 ---
 
-GDT
-===
+GDT[0]
+======
 
 La GDT[0] es la entrada NULL:
 
@@ -225,16 +229,6 @@ La GDT[0] es la entrada NULL:
 * `#GP` si se carga `CS` o `SS` con ese índice.
 * Los otros *segment registers* no generan, pero cualquier uso de ellos si.
 * Buena idea para inicializar todos los *segment registers*.
-
-
-**ToDo** meter más cosas.
-
----
-
-LDT
-===
-
-**ToDo** ¿Da para una filmina?
 
 ---
 
@@ -248,8 +242,136 @@ Segment Descriptors (en detalle)
 Segment Descriptors (en detalle -- 2)
 ===================
 
-ToDo
-Hablar de bits en particular: scaling de limit, expand up&down, present, accessed.
+Algunos campos importantes además de *(base,limit,DPL)*
+
+* `G`: granularidad del límite (1 byte o 4KB), sino no llega a 4GB.
+* `S`: segmento de sistema (LDT, TTS, IG, TG, CG) por ejemplo, o de código/datos.
+* `P`: si el segmento está presente. Al cargar un *segment register*, con un *segment selector* que apunta a un *segment descriptor* que no está presente, genera un `#NP`.
+* `D/B`: indica si el código y/o el stack son de 16 o 32 bits.
+* `Type`: data/code, executable/not, writable/not, accessed/not, dependiendo del tipo.
+
+---
+
+GeekOS y segmentación (1)
+=========================
+
+Como captura el *segment descriptor*:
+
+    !c
+    struct Segment_Descriptor {
+        ushort_t sizeLow        PACKED ;
+        uint_t baseLow     : 24 PACKED ;
+        uint_t type        : 4  PACKED ;
+        uint_t system      : 1  PACKED ;
+        uint_t dpl         : 2  PACKED ;
+        uint_t present     : 1  PACKED ;
+        uint_t sizeHigh    : 4  PACKED ;
+        uint_t avail       : 1  PACKED ;
+        uint_t reserved    : 1  PACKED ;  /* set to zero */
+        uint_t dbBit       : 1  PACKED ;
+        uint_t granularity : 1  PACKED ;
+        uchar_t baseHigh        ;
+    };
+
+
+Como arma un *segment selector*:
+
+    !c
+    static __inline__ ushort_t Selector(int rpl, bool segmentIsInGDT, int index)
+    {
+        ushort_t selector = 0;
+        selector = (rpl & 0x3) | ((segmentIsInGDT ? 0 : 1) << 2)
+                               | ((index & 0x1FFF) << 3);
+        return selector;
+    }
+
+---
+
+GeekOS y segmentación (2)
+=========================
+
+Como establece *(base,limit)*:
+
+    !c
+    static __inline__ void Set_Size_And_Base_Pages(
+       struct Segment_Descriptor* desc,
+        ulong_t baseAddr,
+        ulong_t numPages
+    )
+    {
+        /*
+         * There are 20 bits in the size fields of a segment descriptor.
+         * The maximum possible value is thus 0xFFFFF, which in terms of
+         * pages is one page less than 4GB.  So, I conclude that the
+         * number of pages in the segment is one greater than the
+         * value specified in the descriptor.
+         */
+        KASSERT(numPages > 0);
+        numPages -= 1;
+
+        desc->sizeLow     = numPages & 0xFFFF;
+        desc->sizeHigh    = (numPages >> 16) & 0x0F;
+        desc->baseLow     = baseAddr & 0xFFFFFF;
+        desc->baseHigh    = (baseAddr >> 24) & 0xFF;
+        desc->granularity = 1;  /* size in pages */
+    }
+
+---
+
+GeekOS y segmentación (2)
+=========================
+
+Setear un *segment selector* de **código**:
+
+    !c
+    void Init_Code_Segment_Descriptor(
+        struct Segment_Descriptor* desc,
+        ulong_t baseAddr,
+        ulong_t numPages,
+        int privilegeLevel
+    )
+    {
+        KASSERT(privilegeLevel >= 0 && privilegeLevel <= 3);
+
+        Set_Size_And_Base_Pages(desc, baseAddr, numPages);
+        desc->type     = 0x0A;   /* 1010b: code, !conforming, readable, !accessed */
+        desc->system   = 1;
+        desc->dpl      = privilegeLevel;
+        desc->present  = 1;
+        desc->reserved = 0;
+        desc->dbBit    = 1;  /* 32 bit code segment */
+    }
+
+---
+
+GeekOS y segmentación (3)
+=========================
+
+Setear un *segment selector* de **datos**:
+
+    !c
+    void Init_Data_Segment_Descriptor(
+        struct Segment_Descriptor* desc,
+        ulong_t baseAddr,
+        ulong_t numPages,
+        int privilegeLevel
+    )
+    {
+        KASSERT(privilegeLevel >= 0 && privilegeLevel <= 3);
+
+        Set_Size_And_Base_Pages(desc, baseAddr, numPages);
+        desc->type     = 0x02;  /* 0010b: data, expand-up, writable, !accessed */
+        desc->system   = 1;
+        desc->dpl      = privilegeLevel;
+        desc->present  = 1;
+        desc->reserved = 0;
+        desc->dbBit    = 1;  /* 32 bit operands */
+    }
+
+Se pueden setear los segmentos para que se expandan para arriba o para abajo:
+
+* **Expand-up**, rango válido en *[0,limit)*.
+* **Expand-down**, rango válido en *[limit, 100000000h)*, para stacks.
 
 ---
 
@@ -264,6 +386,17 @@ Detalles
 	* Descriptors a 0: base=0, limit=4GB, type=data+readonly.
 	* Pero *no*, GDT[0] no se puede usar.
 * Tenemos soporte de `accessed` y `present`: ¿Virtual Segmentation?
+* ¿Para que usar las dos GDT y LDT, si con GDT sola alcanzaría?
+
+---
+
+Ejemplos
+========
+
+* `project2/src/geekos/setup.asm`
+* `project1/src/geekos/lprog.c`
+
+Veamos algunas cositas de `setup.asm`.
 
 ---
 
@@ -279,7 +412,13 @@ Usos y desusos
 	* Ambos overlapping, usualmente toda la memoria.
 	* Creo que algo se puede hacer con el stack (Linux tiene un segmento para [stack canary](http://en.wikipedia.org/wiki/Buffer_overflow_protection)).
 		De hecho el bug de Proy1 mostraba que `SS` puede no estar overlapping.
-* NaCl (**completar**).
+
+La segmentación no está muerta
+------------------------------
+
+* *[Native Client](http://www.chromium.org/nativeclient): A Sandbox for Portable, Untrusted x86 Native Code*, IEEE Symposium on Security and Privacy, 2009.
+    * Implementa *load&store* sandboxing de manera efectiva utilizando la segmentación ia32.
+
 
 ---
 
@@ -295,4 +434,4 @@ Material de Lectura
 * Las [filminas](http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/proj2.ppt) con más información.
 * `proyect1/src/geekos/lprog.c`.
 * Tom Shanley, *Protected Mode Software Architecture*, Mindshare, 1996.
-
+* Artículo de la Wikipedis sobre [Segmentación en x86](http://en.wikipedia.org/wiki/X86_memory_segmentation).
