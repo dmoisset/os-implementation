@@ -434,4 +434,4 @@ Material de Lectura
 * Las [filminas](http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/proj2.ppt) con más información.
 * `proyect1/src/geekos/lprog.c`.
 * Tom Shanley, *Protected Mode Software Architecture*, Mindshare, 1996.
-* Artículo de la Wikipedis sobre [Segmentación en x86](http://en.wikipedia.org/wiki/X86_memory_segmentation).
+* Artículo de la Wikipedia sobre [Segmentación en x86](http://en.wikipedia.org/wiki/X86_memory_segmentation).
