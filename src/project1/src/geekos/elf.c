@@ -38,24 +38,24 @@ int Parse_ELF_Executable(char *exeFileData,
   elfHeader *elf = (elfHeader *) exeFileData;
 
   /* Check for magic number */
-  if (elf->ident[0] != EI_MAG0 || elf->ident[1] != EI_MAG1 || 
-          elf->ident[2] != EI_MAG2 || elf->ident[3] != EI_MAG3) 
+  if (elf->ident[0] != 0x7f || elf->ident[1] != 'E' || 
+          elf->ident[2] != 'L' || elf->ident[3] != 'F') 
       return -1;
 
   /* Fail if not executable */
-  if (elf->type != ELF_EXEC)
+  if (elf->type != 0x2)
       return -1;
 
   /* Fail if not supported version */
-  if (elf->version != ELF_VERS)
+  if (elf->version != 0x1)
       return -1;
 
   /* Fail if no valid program headers */
   if (elf->phnum < 0)
       return -1;
 
-  /* Fail if not supported architecture (Intel) */
-  if (elf->machine != ELF_ARCH)
+  /* Fail if not supported architecture (Intel)*/
+  if (elf->machine != 0x3)
       return -1;
 
   /* Fail if memory address are not "inside" the ELF */ 
