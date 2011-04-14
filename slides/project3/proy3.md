@@ -60,7 +60,7 @@ Algoritmo
 	* si llega a la cola 3 no puede bajar más
 * si un proceso se bloquea, pasa a la próxima cola con más prioridad
 	* si llega a la cola 0 no puede subir más
-* caso especial: Idle (prioridad 0 siempre!)
+* caso especial: Idle (prioridad 3 siempre!)
 
 
 ---
