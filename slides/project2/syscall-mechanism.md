@@ -289,7 +289,7 @@ Entonces al final, es una función!
 Bueno, casi
 ===========
 
-Se acuerdan que pasar parametros era difícil?
+Se acuerdan que pasar parámetros era difícil?
  * Si son números, un registro alcanza
  * Y si son punteros?
  
@@ -309,13 +309,13 @@ Pasando arreglos de un lado a otro
 
 `Copy_From_User`
 
-* Es lo que necesitaria una llamada como `open()` arriba
+* Es lo que necesitaría una llamada como `open()` arriba
 	* Hace por software lo mismo que el CPU hace en el otro contexto
 	* Incluyendo chequeos de permisos/límites
 
 `Copy_From_User`
 
-* Es lo que necesitaria una llamada como `read()` arriba
+* Es lo que necesitaría una llamada como `read()` arriba
 	* Hace por software lo mismo que el CPU hace en el otro contexto
 	* Incluyendo chequeos de permisos/límites
 
@@ -333,6 +333,18 @@ debería ser "confiable". Un `KASSERT` nunca sobra
 * Si es un string, NULL termination
 
 No chequear esto es causa de bugs. [De verdad](http://butnotyet.tumblr.com/post/175132533/the-story-of-a-simple-and-dangerous-kernel-bug).
+
+---
+Y más!
+======
+
+No sólo al copiar datos puede haber problemas
+
+* Los syscalls son la puerta de entrada desde user-space a kernel
+* Misma paranoia que al escribir código networked
+* Todo el input es "untrusted"
+
+_(si este slide se ve mal, es por que no lo testee)_
 
 ---
 
