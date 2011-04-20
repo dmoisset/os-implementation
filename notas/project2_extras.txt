@@ -13,3 +13,9 @@
 * ¿Se podría definir un layout de segmentos que no se superpongan de forma tal que no haya manera que se mezclen código, datos y stack?
 
 ** Investigar como [NaCl](http://code.google.com/chrome/nativeclient/) utiliza ia32 segmentation.
+
+* Una vez completada toda la funcionalidad probar:
+	* Que argc,argv pasan correctamente imprimiéndolos.
+	* Que las syscalls que reciben ptrs no son fácilmente quebrables.
+	* Que no puedo hacer un syscall ilegal, ni una interrupción que no sea la `0x90`.
+	* Que el shell funcione!
