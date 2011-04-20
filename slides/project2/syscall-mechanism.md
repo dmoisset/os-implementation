@@ -74,7 +74,7 @@ O sea que:
 No, nene, con `CALL` y `RET` no alcanza
 =======================================
 
-* Seguramente las funciones no estan mapeadas en el address space
+* Seguramente las funciones no están mapeadas en el address space
 * Y si lo estuvieran, el proceso no sabría la dirección
 * Y si lo supiera corre con los privilegios del proceso
     * Con lo cual no tiene acceso a las estructuras de datos del kernel (a menos que estemos haciendo algo _muy_ mal)
@@ -92,7 +92,7 @@ Nos vamos acercando... idealmente algo como:
 	 * con el nivel de privilegio que corresponde
 	 */
 
-Pero que pasa si alguien hace trampa al llamar?
+¿Pero que pasa si alguien hace trampa al llamar?
 
 	!c
 	int remove_file(char *filename) {
@@ -269,7 +269,7 @@ En kernel space:
  * `idt.c` setea la tabla, definida en `lowlevel.asm`
  * `trap.c` inicializa la entrada `0x90` a `Syscall_Handler()`
  * `Syscall_Handler()` busca en la tabla `g_syscallTable` la funcion que corresponde a `eax`
- * `g_syscallTable` se define estaticamente en `syscall.c`
+ * `g_syscallTable` se define estáticamente en `syscall.c`
 
 Ustedes nomás escriben el cuerpo de las funciones:
 
@@ -327,8 +327,8 @@ Chequeos importantes
 * Que el área tenga la cantidad de bytes necesarios
     * Hint: algo de esto puede ya estar
 * Que el área sea legible/escribible
-* devolver el valor de retorno que corresponda a lo que chequearon
-* el puntero en kernelSpace viene de mas código de Kernel, o sea que
+* Devolver el valor de retorno que corresponda a lo que chequearon
+* El puntero en kernelSpace viene de mas código de Kernel, o sea que
 debería ser "confiable". Un `KASSERT` nunca sobra
 * Si es un string, NULL termination
 
