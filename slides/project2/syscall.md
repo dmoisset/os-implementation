@@ -7,9 +7,13 @@ Syscalls
 Resumen:
 ========
 
-* a
-* b
-* c
+* Generalidades.
+* ¿Que hay que completar?
+
+---
+
+Generalidades
+=============
 
 ---
 
@@ -36,7 +40,6 @@ Veamos el prototipo de un syscall
 Un `struct Interrupt_State` es exactamente lo mismo que se deja para cualquier interrupción (software o hardware).
 
 En `include/int.h`
-------------------
 
 	!c
 	struct Interrupt_State {
@@ -80,7 +83,7 @@ En `include/int.h`
 	};
 
 
-Entonces leemos los registros que tienen los parámetros así de fácil:
+Entonces leemos los registros que tienen los parámetros y devolvemos resultados así de **fácil**:
 
 	!c
 	static int Sys_Wait(struct Interrupt_State* state)
@@ -89,4 +92,70 @@ Entonces leemos los registros que tienen los parámetros así de fácil:
 		...
 	}
 
+	static int Sys_Spawn(struct Interrupt_State* state)
+	{
+		...
+		return pid;
+	}
+
 ---
+
+`Copy_From_User`/`Copy_To_User`
+===============================
+
+Se necesita más:
+
+* Que saber que `pid` nos dieron (`Spawn`).
+* Que pasar un `pid` para esperar (`Wait`).
+* Que pasarle las coordenadas para mover el cursor (`PutCursor`).
+
+Para bajar y subir cosas desde y hacia userspace (ptrs):
+
+	!c
+	bool Copy_From_User(void* destInKernel, ulong_t srcInUser, ulong_t bufSize)
+	
+	Copy_To_User(ulong_t destInUser, void* srcInKernel, ulong_t bufSize)
+
+---
+
+¿Que hay que completar?
+=======================
+
+---
+
+Listado de SysCalls en grupos
+=============================
+
+Solo 10 syscalls, que a medida que avancen los proyectos serán más.
+
+Triviales
+---------
+
+* `Null`, `GetKey`, `SetAttr`, `PutCursor`, `GetPID`.
+
+Intermedias
+-----------
+
+* `Exit`, `PrintString`, `GetCursor`, `Wait`.
+
+Complicadas
+-----------
+
+* `Spawn`.
+
+Además de `Copy_From_User`/`Copy_To_User`.
+
+De nuevo las [filminas](http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/proj2.ppt) tienen información extra de ayuda.
+
+---
+
+Finalmente
+==========
+
+* Probar `src/user/shell.c`
+
+* Hacer más userspace programas para probar cuestiones como:
+	* Ver si la interface `argc,argv` y exit code funcionan.
+	* Fortaleza de los syscalls, implementando un [*stress testing*](http://people.freebsd.org/~pho/linuxforum06/linuxforum06.pdf)
+		¿Armar un stress test para GeekOS?
+
