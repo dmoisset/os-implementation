@@ -23,6 +23,7 @@
  * mode processes.
  */
 
+
 /*
  * Associate the given user context with a kernel thread.
  * This makes the thread a user process.
@@ -98,7 +99,26 @@ int Spawn(const char *program, const char *command, struct Kernel_Thread **pThre
      * If all goes well, store the pointer to the new thread in
      * pThread and return 0.  Otherwise, return an error code.
      */
-    TODO("Spawn a process by reading an executable from a filesystem");
+  char *exeFileData = 0;
+  ulong_t exeFileLength;
+  struct Exe_Format exeFormat;
+  struct User_Context *userContext;
+  struct Kernel_Thread *process;
+
+    Read_Fully(program, (void**) &exeFileData, &exeFileLength);
+
+    Parse_ELF_Executable(exeFileData, exeFileLength, &exeFormat);
+
+
+    Load_User_Program(exeFileData, (ulong_t) &exeFileLength, &exeFormat, 
+              program, &userContext);
+
+  process = Start_User_Thread(userContext, false);
+
+  *pThread = process;
+
+
+  return 0;
 }
 
 /*

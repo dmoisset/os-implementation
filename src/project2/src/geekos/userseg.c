@@ -38,8 +38,56 @@
  */
 
 /* TODO: Implement
-static struct User_Context* Create_User_Context(ulong_t size)
 */
+static struct User_Context* Create_User_Context(ulong_t size)
+{   
+    struct User_Context *userContext = 0;
+    /* TODO ... do this?!?!?!? */
+
+    /* Allocate space for User_Context 'user.h' */
+    userContext = (struct User_Context*) Malloc(sizeof(*userContext));
+
+    /* Allocate 'size' memory and fill size fild of userContext 
+     * (should it be cleared?)
+     */
+    userContext->memory = Malloc(size);
+    userContext->size   = size;
+
+    /* Allocate a LDT */
+    /* METODO - Handle NULL (could not allocate descriptor) */
+    userContext->ldtDescriptor = Allocate_Segment_Descriptor();
+
+    /* Init LDT */
+    Init_LDT_Descriptor(userContext->ldtDescriptor, userContext->ldt,
+            NUM_USER_LDT_ENTRIES);    
+
+    /* Create a selector that contains the location of the LDT descriptor
+     * whitin the GDT 
+     */
+    userContext->ldtSelector = Selector(USER_PRIVILEGE, false, 
+            Get_Descriptor_Index(userContext->ldtDescriptor));
+
+    /* Create descriptors for the code and the data segments of the
+     * user program and add these descriptors to the LDT
+     */
+    Init_Code_Segment_Descriptor(&userContext->ldt[0], 
+            (ulong_t) userContext->memory,
+            size/PAGE_SIZE, 
+            USER_PRIVILEGE);
+
+    Init_Data_Segment_Descriptor(&userContext->ldt[1], 
+            (ulong_t) userContext->memory,
+            size/PAGE_SIZE, 
+            USER_PRIVILEGE);
+
+    /* Create selectors that contain the location of the two descriptors
+     * within the LDT
+     */
+    userContext->csSelector = Selector(USER_PRIVILEGE, false, 0);
+    userContext->dsSelector = Selector(USER_PRIVILEGE, false, 1);
+
+    return userContext;
+}    
 
 
 static bool Validate_User_Memory(struct User_Context* userContext,
@@ -109,7 +157,57 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
      *   address, argument block address, and initial kernel stack pointer
      *   address
      */
-    TODO("Load a user executable into a user memory space using segmentation");
+   // TODO("Load a user executable into a user memory space using segmentation");
+    unsigned long virtSize;
+    int i = 0;
+    ulong_t maxva = 0;
+    unsigned numArgs = 0;
+    ulong_t argBlockSize = 0;
+    ulong_t start_argBlock_mem = 0;
+    
+    /* Find maximum virtual address */
+    for (i = 0; i < exeFormat->numSegments; ++i) {
+        struct Exe_Segment *segment = &exeFormat->segmentList[i];
+        ulong_t topva = segment->startAddress + segment->sizeInMemory;
+
+        if (topva > maxva)
+            maxva = topva;
+    }
+
+    /* Find Argument Block Size */
+    Get_Argument_Block_Size(command, &numArgs, &argBlockSize);
+    virtSize = Round_Up_To_Page(maxva) + 
+        Round_Up_To_Page(DEFAULT_USER_STACK_SIZE); 
+    
+    start_argBlock_mem = virtSize;
+
+    virtSize += argBlockSize;
+
+    *pUserContext = Create_User_Context(virtSize);
+
+
+    Format_Argument_Block((*pUserContext)->memory + start_argBlock_mem, 
+            numArgs, 
+            start_argBlock_mem,
+            command);
+
+
+    /* Create the user context */
+    (*pUserContext)->entryAddr          = exeFormat->entryAddr;
+    (*pUserContext)->argBlockAddr       = start_argBlock_mem;
+    (*pUserContext)->stackPointerAddr   = virtSize;
+
+    /* Copy segments over into process' memory space */
+    for (i = 0; i < exeFormat->numSegments; i++){
+        struct Exe_Segment *segment = &exeFormat->segmentList[i];
+
+        memcpy((*pUserContext)->memory + segment->startAddress,
+            exeFileData + segment->offsetInFile,
+            segment->lengthInFile);
+    }
+
+
+    return 0;
 }
 
 /*

@@ -515,7 +515,16 @@ Start_User_Thread(struct User_Context* userContext, bool detached)
      * - Call Make_Runnable_Atomic() to schedule the process
      *   for execution
      */
-    TODO("Start user thread");
+    //TODO("Start user thread");
+
+    /* Create a new thread */
+    struct Kernel_Thread *kThread = Create_Thread(PRIORITY_NORMAL, detached);
+    
+    Setup_User_Thread(kThread, userContext);
+
+    Make_Runnable_Atomic(kThread);
+
+    return kThread;
 }
 
 /*
