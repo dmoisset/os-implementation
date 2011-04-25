@@ -17,6 +17,8 @@
 #include <geekos/kthread.h>
 #include <geekos/malloc.h>
 
+#include <geekos/user.h> /* For Attach_User_Context() */
+
 
 /* ----------------------------------------------------------------------
  * Private data
@@ -313,7 +315,30 @@ static void Setup_Kernel_Thread(
      * - The esi register should contain the address of
      *   the argument block
      */
-    TODO("Create a new thread to execute in user mode");
+    //TODO("Create a new thread to execute in user mode");
+
+    Attach_User_Context(kthread, userContext);
+    
+    Push(kthread, userContext->dsSelector);
+    Push(kthread, userContext->stackPointerAddr);
+    Push(kthread, EFLAGS_IF);                             /* EFLAGS_IF? */
+    Push(kthread, userContext->csSelector);
+    Push(kthread, userContext->entryAddr);
+    Push(kthread, 0);                               /* Error Code */
+    Push(kthread, 0);                               /* Interrupt Number */
+    Push(kthread, 0);                               /* EAX */
+    Push(kthread, 0);                               /* EBX */
+    Push(kthread, 0);                               /* ECX */
+    Push(kthread, 0);                               /* EDX */
+    Push(kthread, userContext->argBlockAddr);
+    Push(kthread, 0);                               /* EDI */
+    Push(kthread, 0);                               /* EBP */
+    Push(kthread, userContext->dsSelector);         /* DS */                     
+    Push(kthread, userContext->dsSelector);         /* ES */                      
+    Push(kthread, userContext->dsSelector);         /* FS */                      
+    Push(kthread, userContext->dsSelector);         /* GS */                      
+
+    Print(" [*] Create new thread to run in user mode\n");
 }
 
 
@@ -518,11 +543,16 @@ Start_User_Thread(struct User_Context* userContext, bool detached)
     //TODO("Start user thread");
 
     /* Create a new thread */
-    struct Kernel_Thread *kThread = Create_Thread(PRIORITY_NORMAL, detached);
+    struct Kernel_Thread *kThread = Create_Thread(PRIORITY_USER, detached);
+    if(kThread == 0){
+        Print(" [!] Failed Creat_Thread\n");
+        return NULL;
+    }
     
     Setup_User_Thread(kThread, userContext);
-
     Make_Runnable_Atomic(kThread);
+
+    Print(" [*] Start User Thread\n");
 
     return kThread;
 }

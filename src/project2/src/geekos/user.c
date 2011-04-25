@@ -104,21 +104,37 @@ int Spawn(const char *program, const char *command, struct Kernel_Thread **pThre
   struct Exe_Format exeFormat;
   struct User_Context *userContext;
   struct Kernel_Thread *process;
+  int ret = 0;
 
-    Read_Fully(program, (void**) &exeFileData, &exeFileLength);
+  ret = Read_Fully(program, (void**) &exeFileData, &exeFileLength);
+  if (ret != 0){
+      Print(" [!] Failed to read program: %s\n",program);
+      return ENOTFOUND;
+  }
 
-    Parse_ELF_Executable(exeFileData, exeFileLength, &exeFormat);
+  ret = Parse_ELF_Executable(exeFileData, exeFileLength, &exeFormat);
+  if (ret != 0){
+      Print(" [!] Failed to parse ELF\n");
+      return ENOEXEC;
+  }
 
-
-    Load_User_Program(exeFileData, (ulong_t) &exeFileLength, &exeFormat, 
-              program, &userContext);
+  ret = Load_User_Program(exeFileData, exeFileLength, &exeFormat, 
+              command, &userContext);
+  if (ret != 0){
+      Print(" [!] Fail in Load_User_Program\n");
+      return -1;
+  }
 
   process = Start_User_Thread(userContext, false);
+  if (process == NULL){
+      Print(" [!] Failed Start_User_Thread\n");
+      return -1;
+  }
 
   *pThread = process;
 
-
-  return 0;
+  Print(" [*] Finished Spawn\n");
+  return (*pThread)->pid;
 }
 
 /*
@@ -137,6 +153,14 @@ void Switch_To_User_Context(struct Kernel_Thread* kthread, struct Interrupt_Stat
      * the Set_Kernel_Stack_Pointer() and Switch_To_Address_Space()
      * functions.
      */
-    TODO("Switch to a new user address space, if necessary");
+    //TODO("Switch to a new user address space, if necessary");
+    
+    /* From sebagalan */
+    KASSERT(kthread != NULL && state != NULL);
+
+    if (kthread->userContext != NULL){
+        Set_Kernel_Stack_Pointer((ulong_t) kthread->stackPage + PAGE_SIZE);
+        Switch_To_Address_Space(kthread->userContext);
+    }
 }
 

@@ -21,11 +21,15 @@
 #include <geekos/argblock.h>
 #include <geekos/user.h>
 
+#include <geekos/errno.h>
+
 /* ----------------------------------------------------------------------
  * Variables
  * ---------------------------------------------------------------------- */
 
 #define DEFAULT_USER_STACK_SIZE 8192
+#define LDTCS 0
+#define LDTDS 1
 
 
 /* ----------------------------------------------------------------------
@@ -42,51 +46,78 @@
 static struct User_Context* Create_User_Context(ulong_t size)
 {   
     struct User_Context *userContext = 0;
-    /* TODO ... do this?!?!?!? */
 
     /* Allocate space for User_Context 'user.h' */
-    userContext = (struct User_Context*) Malloc(sizeof(*userContext));
+    userContext = (struct User_Context*) Malloc(sizeof(struct User_Context));
+    if(userContext == NULL){
+        Print(" [!] Failed allocating memory for userContext\n");
+        goto error;
+    }
 
     /* Allocate 'size' memory and fill size fild of userContext 
-     * (should it be cleared?)
      */
-    userContext->memory = Malloc(size);
+    userContext->memory = (char *) Malloc(sizeof(char) * size);
+    memset((char *) userContext->memory, '\0', size); 
     userContext->size   = size;
+
+    if(userContext->memory == NULL){
+        Print(" [!] Failed allocating memory for userContext->memory\n");
+        goto error;
+    }
 
     /* Allocate a LDT */
     /* METODO - Handle NULL (could not allocate descriptor) */
     userContext->ldtDescriptor = Allocate_Segment_Descriptor();
+    if(userContext->ldtDescriptor == NULL){
+       Print(" [!] Could not allocate descriptor\n");
+       goto error;
+    } 
 
     /* Init LDT */
-    Init_LDT_Descriptor(userContext->ldtDescriptor, userContext->ldt,
+    Init_LDT_Descriptor(userContext->ldtDescriptor, 
+            userContext->ldt,
             NUM_USER_LDT_ENTRIES);    
 
     /* Create a selector that contains the location of the LDT descriptor
      * whitin the GDT 
      */
-    userContext->ldtSelector = Selector(USER_PRIVILEGE, false, 
+    userContext->ldtSelector = Selector(KERNEL_PRIVILEGE, true, 
             Get_Descriptor_Index(userContext->ldtDescriptor));
 
     /* Create descriptors for the code and the data segments of the
      * user program and add these descriptors to the LDT
      */
-    Init_Code_Segment_Descriptor(&userContext->ldt[0], 
+    Init_Code_Segment_Descriptor(&userContext->ldt[LDTCS], 
             (ulong_t) userContext->memory,
-            size/PAGE_SIZE, 
+            (size/PAGE_SIZE), 
             USER_PRIVILEGE);
 
-    Init_Data_Segment_Descriptor(&userContext->ldt[1], 
+    Init_Data_Segment_Descriptor(&userContext->ldt[LDTDS], 
             (ulong_t) userContext->memory,
-            size/PAGE_SIZE, 
+            (size/PAGE_SIZE), 
             USER_PRIVILEGE);
 
-    /* Create selectors that contain the location of the two descriptors
-     * within the LDT
-     */
-    userContext->csSelector = Selector(USER_PRIVILEGE, false, 0);
-    userContext->dsSelector = Selector(USER_PRIVILEGE, false, 1);
+
+    userContext->csSelector = Selector(USER_PRIVILEGE, 
+                                        false, 
+                                        0);
+                                        //(int)&userContext->ldt[LDTCS]);
+
+    userContext->dsSelector = Selector(USER_PRIVILEGE, 
+                                        false, 
+                                        1);
+                                        //(int)&userContext->ldt[LDTDS]);
+
+    KASSERT(userContext != NULL);
+    userContext->refCount = 0;
 
     return userContext;
+
+error:
+    Free(userContext);
+    Free(userContext->memory);
+    Free(userContext);
+    return NULL;
 }    
 
 
@@ -121,7 +152,16 @@ void Destroy_User_Context(struct User_Context* userContext)
      * - don't forget to free the segment descriptor allocated
      *   for the process's LDT
      */
-    TODO("Destroy a User_Context");
+    //TODO("Destroy a User_Context");
+
+
+    Free_Segment_Descriptor(userContext->ldtDescriptor);
+    //Free(userContext->memory);
+    userContext->memory = 0;
+    Free(userContext);
+
+    Print(" [*] User Context Destroyed\n");
+    userContext = NULL;
 }
 
 /*
@@ -160,10 +200,14 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
    // TODO("Load a user executable into a user memory space using segmentation");
     unsigned long virtSize;
     int i = 0;
+    int ret = -1;
     ulong_t maxva = 0;
     unsigned numArgs = 0;
     ulong_t argBlockSize = 0;
-    ulong_t start_argBlock_mem = 0;
+    struct Argument_Block *pArgBlock = NULL;
+    ulong_t start_vaddr_argblock = 0;
+    ulong_t max_vaddr_argblock = 0;
+    struct User_Context *userContext = 0;
     
     /* Find maximum virtual address */
     for (i = 0; i < exeFormat->numSegments; ++i) {
@@ -175,39 +219,95 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
     }
 
     /* Find Argument Block Size */
-    Get_Argument_Block_Size(command, &numArgs, &argBlockSize);
+   // Get_Argument_Block_Size(command, &numArgs, &argBlockSize);
+    if(numArgs < 0 || argBlockSize < 0){
+        Print(" [!] numArgs < 0 || argBlockSize < 0 !!!\n");
+        ret = EUNSPECIFIED;
+        goto error;
+    }
+
+    /*
     virtSize = Round_Up_To_Page(maxva) + 
-        Round_Up_To_Page(DEFAULT_USER_STACK_SIZE); 
-    
-    start_argBlock_mem = virtSize;
-
-    virtSize += argBlockSize;
-
-    *pUserContext = Create_User_Context(virtSize);
-
-
-    Format_Argument_Block((*pUserContext)->memory + start_argBlock_mem, 
-            numArgs, 
-            start_argBlock_mem,
-            command);
+        Round_Up_To_Page(DEFAULT_USER_STACK_SIZE +
+                argBlockSize); 
+    */
+    virtSize = Round_Up_To_Page(maxva);
+    Get_Argument_Block_Size(command, &numArgs, &argBlockSize);
+    virtSize += Round_Up_To_Page(DEFAULT_USER_STACK_SIZE);
+    start_vaddr_argblock = virtSize;
+    virtSize += Round_Up_To_Page(argBlockSize);
+    max_vaddr_argblock = virtSize;
 
 
-    /* Create the user context */
-    (*pUserContext)->entryAddr          = exeFormat->entryAddr;
-    (*pUserContext)->argBlockAddr       = start_argBlock_mem;
-    (*pUserContext)->stackPointerAddr   = virtSize;
+    userContext = Create_User_Context(virtSize);
+    if(pUserContext == NULL){
+        Print(" [!] Failed Create_User_Context\n");
+        ret = ENOMEM;
+        goto error;
+    }
 
     /* Copy segments over into process' memory space */
     for (i = 0; i < exeFormat->numSegments; i++){
         struct Exe_Segment *segment = &exeFormat->segmentList[i];
 
-        memcpy((*pUserContext)->memory + segment->startAddress,
+        memcpy(userContext->memory + segment->startAddress,
             exeFileData + segment->offsetInFile,
             segment->lengthInFile);
     }
 
 
+    pArgBlock = Malloc(sizeof(struct Argument_Block)); 
+    if(pArgBlock == NULL){
+        Print(" [!] Failed allocating memory for temp argBlock\n");
+        ret = ENOMEM;
+        goto error;
+    }
+/*
+    Format_Argument_Block((char *) pArgBlock,  
+            numArgs, 
+            (ulong_t) (*pUserContext)->memory + maxva,
+            command);
+            */  
+
+    Free(pArgBlock);
+    Format_Argument_Block(userContext->memory + start_vaddr_argblock, 
+                            numArgs, 
+                            start_vaddr_argblock,
+                            command);
+
+
+    /* Create the user context */
+    userContext->entryAddr          = exeFormat->entryAddr;
+    //(*pUserContext)->argBlockAddr       = (ulong_t)(*pUserContext)->memory + maxva;
+    userContext->argBlockAddr       = start_vaddr_argblock;
+    //(*pUserContext)->stackPointerAddr   = (ulong_t)virtSize;
+    userContext->stackPointerAddr   = max_vaddr_argblock;
+
+/*    
+Print("    command:\t\t%s numArgs:\t%d argBlockSize:\t%li\n", command, numArgs, argBlockSize);
+Print("    seg_size:\t\t%li\n",maxva); 
+Print("    seg pages:\t\t%li\n\n",(maxva)/PAGE_SIZE); 
+Print("    arg_size:\t\t%li\n",argBlockSize); 
+
+Print("    entry_addr:\t\t%li\n",userContext->entryAddr);
+Print("    stack_addr:\t\t%li\n", userContext->stackPointerAddr);
+Print("    argb_addr:\t\t%li\n", userContext->argBlockAddr);
+Print("    max_vaddr:\t\t%li\n\n",virtSize);
+
+Print("    mem address:\t%ld\n\n", (ulong_t)userContext->memory);
+Print("    size:\t\t%ld\n", userContext->size);
+Print("    pages used:\t\t%lu\n", userContext->size/PAGE_SIZE);
+Print("    LDT Descriptor:\t%d\n", userContext->ldtSelector);
+Print("    code selector:\t%d\n", userContext->csSelector);
+Print("    data selector:\t%d\n", userContext->dsSelector);
+*/
+    *pUserContext = userContext;
+
     return 0;
+
+error:
+    Free(pArgBlock);
+    return ret;
 }
 
 /*
@@ -233,8 +333,20 @@ bool Copy_From_User(void* destInKernel, ulong_t srcInUser, ulong_t bufSize)
      * - make sure the user buffer lies entirely in memory belonging
      *   to the process
      */
-    TODO("Copy memory from user buffer to kernel buffer");
-    Validate_User_Memory(NULL,0,0); /* delete this; keeps gcc happy */
+    //TODO("Copy memory from user buffer to kernel buffer");
+    //Validate_User_Memory(NULL,0,0); /* delete this; keeps gcc happy */
+    bool ret = false;
+
+    ret = Validate_User_Memory(g_currentThread->userContext,
+                                srcInUser, bufSize);
+    if (ret){
+        memcpy(destInKernel, 
+                (void *)(g_currentThread->userContext->memory + srcInUser),
+                bufSize);
+    }
+
+    return ret;
+
 }
 
 /*
@@ -254,7 +366,17 @@ bool Copy_To_User(ulong_t destInUser, void* srcInKernel, ulong_t bufSize)
     /*
      * Hints: same as for Copy_From_User()
      */
-    TODO("Copy memory from kernel buffer to user buffer");
+    //TODO("Copy memory from kernel buffer to user buffer");
+    bool ret = false;
+
+    ret = Validate_User_Memory(g_currentThread->userContext,
+                                destInUser, bufSize);
+    if (ret)
+        memcpy((void *) (g_currentThread->userContext->memory + destInUser),
+                srcInKernel,
+                bufSize);
+
+    return ret;
 }
 
 /*
@@ -269,6 +391,9 @@ void Switch_To_Address_Space(struct User_Context *userContext)
      * Hint: you will need to use the lldt assembly language instruction
      * to load the process's LDT by specifying its LDT selector.
      */
-    TODO("Switch to user address space using segmentation/LDT");
+    //TODO("Switch to user address space using segmentation/LDT");
+
+    __asm__ __volatile__ ("lldt %0" :: "a" (userContext->ldtSelector));
+    //Print(" [*] Switch to user address space using segmentation/LDT\n");
 }
 
