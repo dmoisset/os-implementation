@@ -204,6 +204,18 @@ Probemos los límites de nuestras políticas:
 
 ---
 
+Otras pruebas
+=============
+
+Hacer programas que hagan I/O-bound y CPU-bound que calculen _wall time_.
+
+Comparar el wall time bajo distintas políticas y distintos quantum.
 
 
+---
 
+
+Nota
+====
+
+Modificar shell.c para que acepte el operador &
