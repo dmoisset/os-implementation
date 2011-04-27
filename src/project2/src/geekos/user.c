@@ -99,42 +99,42 @@ int Spawn(const char *program, const char *command, struct Kernel_Thread **pThre
      * If all goes well, store the pointer to the new thread in
      * pThread and return 0.  Otherwise, return an error code.
      */
-  char *exeFileData = 0;
-  ulong_t exeFileLength;
-  struct Exe_Format exeFormat;
-  struct User_Context *userContext;
-  struct Kernel_Thread *process;
-  int ret = 0;
+    char *exeFileData = 0;
+    ulong_t exeFileLength;
+    struct Exe_Format exeFormat;
+    struct User_Context *userContext;
+    struct Kernel_Thread *process;
+    int ret = 0;
 
-  ret = Read_Fully(program, (void**) &exeFileData, &exeFileLength);
-  if (ret != 0){
-      Print(" [!] Failed to read program: %s\n",program);
-      return ENOTFOUND;
-  }
+    ret = Read_Fully(program, (void**) &exeFileData, &exeFileLength);
+    if (ret != 0){
+        Print(" [!] Failed to read program: %s\n",program);
+        return ENOTFOUND;
+    }
 
-  ret = Parse_ELF_Executable(exeFileData, exeFileLength, &exeFormat);
-  if (ret != 0){
-      Print(" [!] Failed to parse ELF\n");
-      return ENOEXEC;
-  }
+    ret = Parse_ELF_Executable(exeFileData, exeFileLength, &exeFormat);
+    if (ret != 0){
+        Print(" [!] Failed to parse ELF\n");
+        return ENOEXEC;
+    }
 
-  ret = Load_User_Program(exeFileData, exeFileLength, &exeFormat, 
-              command, &userContext);
-  if (ret != 0){
-      Print(" [!] Fail in Load_User_Program\n");
-      return -1;
-  }
+    ret = Load_User_Program(exeFileData, exeFileLength, &exeFormat, 
+                            command, &userContext);
+    if (ret != 0){
+        Print(" [!] Fail in Load_User_Program\n");
+        return -1;
+    }
 
-  process = Start_User_Thread(userContext, false);
-  if (process == NULL){
-      Print(" [!] Failed Start_User_Thread\n");
-      return -1;
-  }
+    process = Start_User_Thread(userContext, false);
+    if (process == NULL){
+        Print(" [!] Failed Start_User_Thread\n");
+        return -1;
+    }
 
-  *pThread = process;
+    *pThread = process;
 
-  Print(" [*] Finished Spawn\n");
-  return (*pThread)->pid;
+    Print(" [*] Finished Spawn\n");
+    return (*pThread)->pid;
 }
 
 /*
@@ -155,9 +155,8 @@ void Switch_To_User_Context(struct Kernel_Thread* kthread, struct Interrupt_Stat
      */
     //TODO("Switch to a new user address space, if necessary");
     
-    /* From sebagalan */
-    KASSERT(kthread != NULL && state != NULL);
 
+    /* Kernel threads have a NULL userContext, but users threads is not NULL */
     if (kthread->userContext != NULL){
         Set_Kernel_Stack_Pointer((ulong_t) kthread->stackPage + PAGE_SIZE);
         Switch_To_Address_Space(kthread->userContext);

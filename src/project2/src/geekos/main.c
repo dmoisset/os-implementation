@@ -44,7 +44,6 @@
 #endif
 
 #define INIT_PROGRAM "/" ROOT_PREFIX "/shell.exe"
-//#define INIT_PROGRAM "/" ROOT_PREFIX "/null.exe"
 
 
 
@@ -100,6 +99,5 @@ static void Spawn_Init_Process(void)
     //TODO("Spawn the init process");
     int pid = 0;
     struct Kernel_Thread *pthread = 0;
-    pid = Spawn(INIT_PROGRAM, "", &pthread);
-    Yield();
+    pid = Spawn(INIT_PROGRAM, "shell.exe", &pthread);
 }

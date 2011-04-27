@@ -60,7 +60,6 @@ static int Sys_Exit(struct Interrupt_State* state)
 static int Sys_PrintString(struct Interrupt_State* state)
 {
     //TODO("PrintString system call");
-    //Print("PrintString system call\n");
     char *message;
     ulong_t len = state->ecx;
 
@@ -97,7 +96,6 @@ static int Sys_PrintString(struct Interrupt_State* state)
 static int Sys_GetKey(struct Interrupt_State* state)
 {
     //TODO("GetKey system call");
-    //Print("GetKey system call\n");
     return Wait_For_Key();
 }
 
@@ -110,7 +108,6 @@ static int Sys_GetKey(struct Interrupt_State* state)
 static int Sys_SetAttr(struct Interrupt_State* state)
 {
     //TODO("SetAttr system call");
-    //Print("SetAttr system call\n");
     Set_Current_Attr(state->ebx);
     return 0;
 }
