@@ -86,7 +86,7 @@ static struct User_Context* Create_User_Context(ulong_t size)
     /* Create descriptors for the code and the data segments of the
      * user program and add these descriptors to the LDT
      */
-    Init_Code_Segment_Descriptor(&userContext->ldt[LDTCS], 
+    Init_Code_Segment_Descriptor(&userContext->ldt[LDTCS],
             (ulong_t) userContext->memory,
             (size/PAGE_SIZE), 
             USER_PRIVILEGE);
@@ -111,7 +111,6 @@ static struct User_Context* Create_User_Context(ulong_t size)
     return userContext;
 
 error:
-    Free(userContext);
     Free(userContext->memory);
     Free(userContext);
     return NULL;
@@ -193,16 +192,15 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
      *   address
      */
     //TODO("Load a user executable into a user memory space using segmentation");
-    unsigned long virtSize;
     int i = 0;
-    int ret = -1;
+    int ret = 0;
     ulong_t maxva = 0;
-    unsigned numArgs = 0;
     ulong_t argBlockSize = 0;
-    ulong_t start_vaddr_argblock = 0;
-    ulong_t max_vaddr_argblock = 0;
+    ulong_t stackAddr = 0;
+    unsigned numArgs = 0;
+    unsigned long virtSize;
     struct User_Context *userContext = 0;
-    
+
     /* Find maximum virtual address */
     for (i = 0; i < exeFormat->numSegments; ++i) {
         struct Exe_Segment *segment = &exeFormat->segmentList[i];
@@ -212,30 +210,17 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
             maxva = topva;
     }
 
-    /* Find Argument Block Size */
-    if(numArgs < 0 || argBlockSize < 0){
-        Print(" [!] numArgs < 0 || argBlockSize < 0 !!!\n");
-        ret = EUNSPECIFIED;
-        goto error;
-    }
-
     Get_Argument_Block_Size(command, &numArgs, &argBlockSize);
 
-    virtSize = Round_Up_To_Page(maxva) + 
-            Round_Up_To_Page(DEFAULT_USER_STACK_SIZE);
-    start_vaddr_argblock = virtSize;
+    virtSize = Round_Up_To_Page(maxva);
+    virtSize += Round_Up_To_Page(DEFAULT_USER_STACK_SIZE);
+    stackAddr = virtSize;
     virtSize += Round_Up_To_Page(argBlockSize);
-    max_vaddr_argblock = virtSize;
 
     userContext = Create_User_Context(virtSize);
-    if(pUserContext == NULL){
-        Print(" [!] Failed Create_User_Context\n");
-        ret = ENOMEM;
-        goto error;
-    }
 
     /* Copy segments over into process' memory space */
-    for (i = 0; i < exeFormat->numSegments; i++){
+    for (i = 0; i < exeFormat->numSegments; i++) {
         struct Exe_Segment *segment = &exeFormat->segmentList[i];
 
         memcpy(userContext->memory + segment->startAddress,
@@ -243,21 +228,21 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
             segment->lengthInFile);
     }
 
-    Format_Argument_Block(userContext->memory + start_vaddr_argblock, 
-                            numArgs, 
-                            start_vaddr_argblock,
+    Format_Argument_Block(userContext->memory + stackAddr,
+                            numArgs,
+                            stackAddr,
                             command);
 
     /* Create the user context */
     userContext->entryAddr          = exeFormat->entryAddr;
-    userContext->argBlockAddr       = start_vaddr_argblock;
-    //userContext->stackPointerAddr   = start_vaddr_argblock;
-    userContext->stackPointerAddr   = max_vaddr_argblock;
+    userContext->argBlockAddr       = stackAddr;
+    userContext->stackPointerAddr   = stackAddr;
+
+    if (userContext == NULL)
+        ret = ENOMEM;
 
     *pUserContext = userContext;
-    return 0;
 
-error:
     return ret;
 }
 

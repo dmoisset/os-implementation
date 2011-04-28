@@ -100,41 +100,48 @@ int Spawn(const char *program, const char *command, struct Kernel_Thread **pThre
      * pThread and return 0.  Otherwise, return an error code.
      */
     char *exeFileData = 0;
-    ulong_t exeFileLength;
+    ulong_t exeFileLength = 0;
     struct Exe_Format exeFormat;
-    struct User_Context *userContext;
-    struct Kernel_Thread *process;
+    struct User_Context *userContext = NULL;
+    struct Kernel_Thread *process = NULL;
     int ret = 0;
 
     ret = Read_Fully(program, (void**) &exeFileData, &exeFileLength);
-    if (ret != 0){
-        Print(" [!] Failed to read program: %s\n",program);
-        return ENOTFOUND;
+    if (ret != 0) {
+        ret = ENOTFOUND;
+        goto error;
     }
 
     ret = Parse_ELF_Executable(exeFileData, exeFileLength, &exeFormat);
-    if (ret != 0){
-        Print(" [!] Failed to parse ELF\n");
-        return ENOEXEC;
+    if (ret != 0) {
+        ret = ENOEXEC;
+        goto error;
     }
 
-    ret = Load_User_Program(exeFileData, exeFileLength, &exeFormat, 
+    ret = Load_User_Program(exeFileData, exeFileLength, &exeFormat,
                             command, &userContext);
-    if (ret != 0){
-        Print(" [!] Fail in Load_User_Program\n");
-        return -1;
+    if (ret != 0) {
+        ret = -1;
+        goto error;
     }
 
     process = Start_User_Thread(userContext, false);
-    if (process == NULL){
-        Print(" [!] Failed Start_User_Thread\n");
-        return -1;
+    if (process == NULL) {
+        ret = -1;
+        goto error;
     }
 
     *pThread = process;
 
-    Print(" [*] Finished Spawn\n");
-    return (*pThread)->pid;
+    ret =(*pThread)->pid;
+
+error:
+    if (exeFileData)
+        Free(exeFileData);
+
+    exeFileData = 0;
+ 
+    return ret;
 }
 
 /*
