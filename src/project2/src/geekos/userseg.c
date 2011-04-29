@@ -37,10 +37,60 @@
  * Create a new user context of given size
  */
 
-/* TODO: Implement
 static struct User_Context* Create_User_Context(ulong_t size)
-*/
+{
+    // Pido memoria para el proceso
+    char *mem = (char *) Malloc(size);
+    if(mem == NULL)
+        goto error;
 
+    //reset memory with zeros
+    memset(mem, 0, size);
+
+    // pido memoria para el User_Context
+    struct User_Context *userContext = Malloc(sizeof(struct User_Context));
+    if(userContext ==  NULL)
+        goto error;    
+
+    // Guardo el segment descriptor de la ldt en la gdt
+    struct Segment_Descriptor *ldt_desc = Allocate_Segment_Descriptor(); //LDT-Descriptor for the process
+    if(ldt_desc == NULL)
+        goto error;    
+
+    Init_LDT_Descriptor(ldt_desc, userContext->ldt, NUM_USER_LDT_ENTRIES);
+    //creo un selector para el descriptor de ldt
+    ushort_t ldt_selector = Selector(KERNEL_PRIVILEGE, true, Get_Descriptor_Index(ldt_desc)); 
+
+    //Inicio los segmentos
+    Init_Code_Segment_Descriptor(&(userContext->ldt[0]), (ulong_t)mem, size/PAGE_SIZE, USER_PRIVILEGE);
+    Init_Data_Segment_Descriptor(&(userContext->ldt[1]), (ulong_t)mem, size/PAGE_SIZE, USER_PRIVILEGE);
+
+    //creo los selectores
+    ushort_t cs_selector = Selector(USER_PRIVILEGE, false, 0);    
+    ushort_t ds_selector = Selector(USER_PRIVILEGE, false, 1);
+
+    //asigno todo al userContext
+    userContext->ldtDescriptor = ldt_desc;
+    userContext->ldtSelector = ldt_selector;
+    userContext->csSelector = cs_selector;
+    userContext->dsSelector = ds_selector;
+    userContext->size = size;
+    userContext->memory = mem;
+
+    goto success;
+
+error:
+
+    if(mem !=  NULL)
+        Free(mem);
+    if(userContext !=  NULL)
+        Free(userContext);    
+    return NULL;
+
+success:
+
+    return userContext;
+}
 
 static bool Validate_User_Memory(struct User_Context* userContext,
     ulong_t userAddr, ulong_t bufSize)
