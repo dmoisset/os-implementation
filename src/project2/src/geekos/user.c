@@ -98,7 +98,50 @@ int Spawn(const char *program, const char *command, struct Kernel_Thread **pThre
      * If all goes well, store the pointer to the new thread in
      * pThread and return 0.  Otherwise, return an error code.
      */
-    TODO("Spawn a process by reading an executable from a filesystem");
+    /* Por Victor Rosales */
+    char *exeFileData = 0;
+    ulong_t exeFileLength = 0;
+    struct Exe_Format exeFormat;
+    struct User_Context *userContext = NULL;
+    struct Kernel_Thread *process = NULL;
+    int ret = 0;
+
+    ret = Read_Fully(program, (void**) &exeFileData, &exeFileLength);
+    if (ret != 0) {
+        ret = ENOTFOUND;
+        goto error;
+    }
+
+    ret = Parse_ELF_Executable(exeFileData, exeFileLength, &exeFormat);
+    if (ret != 0) {
+        ret = ENOEXEC;
+        goto error;
+    }
+
+    ret = Load_User_Program(exeFileData, exeFileLength, &exeFormat,
+                            command, &userContext);
+    if (ret != 0) {
+        ret = -1;
+        goto error;
+    }
+
+    process = Start_User_Thread(userContext, false);
+    if (process == NULL) {
+        ret = -1;
+        goto error;
+    }
+
+    *pThread = process;
+
+    ret =(*pThread)->pid;
+
+error:
+    if (exeFileData)
+        Free(exeFileData);
+
+    exeFileData = 0;
+ 
+    return ret;
 }
 
 /*
