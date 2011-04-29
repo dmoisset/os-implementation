@@ -54,16 +54,16 @@ int Parse_ELF_Executable(char *exeFileData,
   if (elf->phnum < 0)
       return -1;
 
-  /* Fail if not supported architecture (Intel)*/
+  /* Fail if not supported architecture (Intel) */
   if (elf->machine != 0x3)
       return -1;
 
-  /* Fail if memory address are not "inside" the ELF */ 
-  if (elf->entry > exeFileLength || elf->phoff > exeFileLength || 
+  /* Fail if memory address are not "inside" the ELF */
+  if (elf->entry > exeFileLength || elf->phoff > exeFileLength ||
           elf->sphoff > exeFileLength)
       return -1;
 
-  /* Fail if reported ELF header size does not match actual 
+  /* Fail if reported ELF header size does not match actual
    * ELF header size */
   if (elf->ehsize != sizeof(elfHeader))
       return -1;
@@ -82,8 +82,8 @@ int Parse_ELF_Executable(char *exeFileData,
   for (i = 0; i < elf->phnum; i++) {
 
     /* Fail if memory address are not "inside" the ELF */
-    if (program->offset > exeFileLength || 
-            program->fileSize > exeFileLength || 
+    if (program->offset > exeFileLength ||
+            program->fileSize > exeFileLength ||
             program->memSize > exeFileLength)
         return -1;
 
