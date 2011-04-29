@@ -39,37 +39,40 @@
 
 static struct User_Context* Create_User_Context(ulong_t size)
 {
-    // Pido memoria para el proceso
+    /* Tiene que ser múltiplo de PAGE_SIZE */
+    KASSERT(size%PAGE_SIZE == 0);
+
+    /* Pido memoria para el proceso */
     char *mem = (char *) Malloc(size);
-    if(mem == NULL)
+    if (mem == NULL)
         goto error;
 
-    //reset memory with zeros
-    memset(mem, 0, size);
+    /* Reset memory with zeros */
+    memset(mem, '\0', size);
 
-    // pido memoria para el User_Context
+    /* Pido memoria para el User_Context */
     struct User_Context *userContext = Malloc(sizeof(struct User_Context));
-    if(userContext ==  NULL)
-        goto error;    
+    if (userContext ==  NULL)
+        goto error;
 
-    // Guardo el segment descriptor de la ldt en la gdt
+    /* Guardo el segment descriptor de la ldt en la gdt */
     struct Segment_Descriptor *ldt_desc = Allocate_Segment_Descriptor(); //LDT-Descriptor for the process
-    if(ldt_desc == NULL)
-        goto error;    
+    if (ldt_desc == NULL)
+        goto error;
 
     Init_LDT_Descriptor(ldt_desc, userContext->ldt, NUM_USER_LDT_ENTRIES);
-    //creo un selector para el descriptor de ldt
+    /* Creo un selector para el descriptor de ldt */
     ushort_t ldt_selector = Selector(KERNEL_PRIVILEGE, true, Get_Descriptor_Index(ldt_desc)); 
 
-    //Inicio los segmentos
+    /* Inicializo los segmentos */
     Init_Code_Segment_Descriptor(&(userContext->ldt[0]), (ulong_t)mem, size/PAGE_SIZE, USER_PRIVILEGE);
     Init_Data_Segment_Descriptor(&(userContext->ldt[1]), (ulong_t)mem, size/PAGE_SIZE, USER_PRIVILEGE);
 
-    //creo los selectores
-    ushort_t cs_selector = Selector(USER_PRIVILEGE, false, 0);    
+    /* Creo los selectores */
+    ushort_t cs_selector = Selector(USER_PRIVILEGE, false, 0);
     ushort_t ds_selector = Selector(USER_PRIVILEGE, false, 1);
 
-    //asigno todo al userContext
+    /* Asigno todo al userContext */
     userContext->ldtDescriptor = ldt_desc;
     userContext->ldtSelector = ldt_selector;
     userContext->csSelector = cs_selector;
@@ -80,15 +83,13 @@ static struct User_Context* Create_User_Context(ulong_t size)
     goto success;
 
 error:
-
-    if(mem !=  NULL)
+    if (mem != NULL)
         Free(mem);
-    if(userContext !=  NULL)
-        Free(userContext);    
+    if (userContext != NULL)
+        Free(userContext);
     return NULL;
 
 success:
-
     return userContext;
 }
 
