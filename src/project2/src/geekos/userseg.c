@@ -109,7 +109,59 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
      *   address, argument block address, and initial kernel stack pointer
      *   address
      */
-    TODO("Load a user executable into a user memory space using segmentation");
+    /* Por Victor Rosales */
+    int i = 0;
+    int ret = 0;
+    ulong_t maxva = 0;
+    ulong_t argBlockSize = 0;
+    ulong_t stackAddr = 0;
+    unsigned numArgs = 0;
+    unsigned long virtSize;
+    struct User_Context *userContext = 0;
+
+    /* Find maximum virtual address */
+    for (i = 0; i < exeFormat->numSegments; ++i) {
+        struct Exe_Segment *segment = &exeFormat->segmentList[i];
+        ulong_t topva = segment->startAddress + segment->sizeInMemory;
+
+        if (topva > maxva)
+            maxva = topva;
+    }
+
+    Get_Argument_Block_Size(command, &numArgs, &argBlockSize);
+
+    virtSize = Round_Up_To_Page(maxva);
+    virtSize += Round_Up_To_Page(DEFAULT_USER_STACK_SIZE);
+    stackAddr = virtSize;
+    virtSize += Round_Up_To_Page(argBlockSize);
+
+    userContext = Create_User_Context(virtSize);
+
+    /* Copy segments over into process' memory space */
+    for (i = 0; i < exeFormat->numSegments; i++) {
+        struct Exe_Segment *segment = &exeFormat->segmentList[i];
+
+        memcpy(userContext->memory + segment->startAddress,
+            exeFileData + segment->offsetInFile,
+            segment->lengthInFile);
+    }
+
+    Format_Argument_Block(userContext->memory + stackAddr,
+                            numArgs,
+                            stackAddr,
+                            command);
+
+    /* Create the user context */
+    userContext->entryAddr          = exeFormat->entryAddr;
+    userContext->argBlockAddr       = stackAddr;
+    userContext->stackPointerAddr   = stackAddr;
+
+    if (userContext == NULL)
+        ret = ENOMEM;
+
+    *pUserContext = userContext;
+
+    return ret;
 }
 
 /*
