@@ -7,6 +7,7 @@
  * redistribute, and modify it as specified in the file "COPYING".
  */
 
+#include <geekos/errno.h>
 #include <geekos/ktypes.h>
 #include <geekos/kassert.h>
 #include <geekos/defs.h>

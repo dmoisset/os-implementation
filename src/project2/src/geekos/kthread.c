@@ -16,6 +16,7 @@
 #include <geekos/string.h>
 #include <geekos/kthread.h>
 #include <geekos/malloc.h>
+#include <geekos/user.h>
 
 
 /* ----------------------------------------------------------------------
