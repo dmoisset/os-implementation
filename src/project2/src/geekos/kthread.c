@@ -313,7 +313,47 @@ static void Setup_Kernel_Thread(
      * - The esi register should contain the address of
      *   the argument block
      */
-    TODO("Create a new thread to execute in user mode");
+	Attach_User_Context(kthread, userContext);
+
+	/* ushort_t dsSelector */
+	Push(kthread, userContext->dsSelector);
+
+	/* stack pointer */
+	Push(kthread, (userContext->stackPointerAddr));
+	/*
+	 * The EFLAGS register will have all bits clear.
+	 * The important constraint is that we want to have the IF
+	 * bit clear, so that interrupts are disabled when the
+	 * thread starts.
+	 */
+	Push(kthread, 0UL);  /* EFLAGS */
+
+	/* ushort_t csSelector */
+	Push(kthread, userContext->csSelector);
+
+	/* Push the address of the start function. */
+	Push(kthread, userContext->entryAddr);
+
+	/* Push fake error code and interrupt number. */
+	Push(kthread, 0UL);
+	Push(kthread, 0UL);
+
+	/* Push initial values for general-purpose registers. */
+	Push(kthread, 0UL);  /* eax */
+	Push(kthread, 0UL);  /* ebx */
+	Push(kthread, 0UL);  /* ecx */
+	Push(kthread, 0UL);  /* edx */
+	Push(kthread, userContext->argBlockAddr);  /* esi */
+	Push(kthread, 0UL);  /* edi */
+	Push(kthread, 0UL);  /* ebp */
+	/*
+	 * Push values for saved segment registers.
+	 * Only the ds and es registers will contain valid selectors.
+	 */
+	Push(kthread, (ulong_t)userContext->dsSelector);	/* ds */
+	Push(kthread, (ulong_t)userContext->dsSelector);	/* es */
+	Push(kthread, (ulong_t)userContext->dsSelector);	/* fs */
+	Push(kthread, (ulong_t)userContext->dsSelector);	/* gs */
 }
 
 
