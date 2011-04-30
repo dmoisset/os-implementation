@@ -555,28 +555,19 @@ Start_User_Thread(struct User_Context* userContext, bool detached)
      * - Call Make_Runnable_Atomic() to schedule the process
      *   for execution
      */
-	/*
-	 * Hints:
-	 * - Use Create_Thread() to create a new "raw" thread object
-	 * - Call Setup_User_Thread() to get the thread ready to
-	 *   execute in user mode
-	 * - Call Make_Runnable_Atomic() to schedule the process
-	 *   for execution
-	 */
-	struct Kernel_Thread* kthread = Create_Thread(PRIORITY_USER, detached);
-	if (kthread != 0) {
-		/*
-		 * Create the initial context for the thread to make
-		 * it schedulable.
-		 */
-		Setup_User_Thread(kthread, userContext);
+    struct Kernel_Thread* kthread = Create_Thread(PRIORITY_USER, detached);
+    if (kthread != 0) {
+        /*
+         * Create the initial context for the thread to make
+         * it schedulable.
+         */
+        Setup_User_Thread(kthread, userContext);
 
+        /* Atomically put the thread on the run queue. */
+        Make_Runnable_Atomic(kthread);
+    }
 
-		/* Atomically put the thread on the run queue. */
-		Make_Runnable_Atomic(kthread);
-	}
-
-	return kthread;
+    return kthread;
 }
 
 /*
