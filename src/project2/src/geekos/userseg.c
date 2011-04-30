@@ -275,6 +275,11 @@ void Switch_To_Address_Space(struct User_Context *userContext)
      * Hint: you will need to use the lldt assembly language instruction
      * to load the process's LDT by specifying its LDT selector.
      */
-    TODO("Switch to user address space using segmentation/LDT");
+    /* Load the task register */
+    __asm__ __volatile__ (
+        "lldt %0"
+        :
+        : "a" (userContext->ldtSelector)
+    );
 }
 
