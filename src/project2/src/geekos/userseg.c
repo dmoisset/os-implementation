@@ -80,6 +80,7 @@ static struct User_Context* Create_User_Context(ulong_t size)
     userContext->dsSelector = ds_selector;
     userContext->size = size;
     userContext->memory = mem;
+    userContext->refCount = 0;
 
     goto success;
 
@@ -125,7 +126,9 @@ void Destroy_User_Context(struct User_Context* userContext)
      * - don't forget to free the segment descriptor allocated
      *   for the process's LDT
      */
-    TODO("Destroy a User_Context");
+    Free_Segment_Descriptor(userContext->ldtDescriptor);
+    Free(userContext->memory);
+    Free(userContext);
 }
 
 /*
