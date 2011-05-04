@@ -548,6 +548,7 @@ struct Kernel_Thread* Start_Kernel_Thread(
 struct Kernel_Thread*
 Start_User_Thread(struct User_Context* userContext, bool detached)
 {
+	KASSERT(userContext != NULL);
     /*
      * Hints:
      * - Use Create_Thread() to create a new "raw" thread object

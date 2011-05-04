@@ -120,6 +120,9 @@ static bool Validate_User_Memory(struct User_Context* userContext,
  */
 void Destroy_User_Context(struct User_Context* userContext)
 {
+    KASSERT(userContext != NULL);
+    KASSERT(userContext->memory != NULL);
+    KASSERT(userContext->ldtDescriptor != NULL);
     /*
      * Hints:
      * - you need to free the memory allocated for the user process
@@ -153,6 +156,10 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
     struct Exe_Format *exeFormat, const char *command,
     struct User_Context **pUserContext)
 {
+    KASSERT(exeFileData != NULL);
+    KASSERT(command != NULL);
+    KASSERT(exeFormat != NULL);
+    
     /*
      * Hints:
      * - Determine where in memory each executable segment will be placed
@@ -233,6 +240,8 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
  */
 bool Copy_From_User(void* destInKernel, ulong_t srcInUser, ulong_t bufSize)
 {
+    KASSERT(destInKernel != NULL);
+    KASSERT(srcInUser != 0);
     /*
      * Hints:
      * - the User_Context of the current process can be found
@@ -260,6 +269,8 @@ bool Copy_From_User(void* destInKernel, ulong_t srcInUser, ulong_t bufSize)
  */
 bool Copy_To_User(ulong_t destInUser, void* srcInKernel, ulong_t bufSize)
 {
+    KASSERT(srcInKernel != NULL);
+    KASSERT(destInUser != 0);
     /*
      * Hints: same as for Copy_From_User()
      */
@@ -274,6 +285,8 @@ bool Copy_To_User(ulong_t destInUser, void* srcInKernel, ulong_t bufSize)
  */
 void Switch_To_Address_Space(struct User_Context *userContext)
 {
+    KASSERT(userContext != NULL);
+    KASSERT(userContext->ldtSelector != 0);
     /*
      * Hint: you will need to use the lldt assembly language instruction
      * to load the process's LDT by specifying its LDT selector.

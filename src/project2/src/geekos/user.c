@@ -161,7 +161,7 @@ void Switch_To_User_Context(struct Kernel_Thread* kthread, struct Interrupt_Stat
      * functions.
      */
     if (kthread->userContext != NULL) {
-        Switch_To_Address_Space(kthread->userContext );
+        Switch_To_Address_Space(kthread->userContext);
         Set_Kernel_Stack_Pointer(((ulong_t) kthread->stackPage) + PAGE_SIZE);
     }
 }
