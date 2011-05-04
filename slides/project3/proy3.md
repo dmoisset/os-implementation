@@ -10,8 +10,7 @@ Este proyecto
 1. nueva política de planificación
 2. nueva primitiva de sincronización
 3. mecanismo para obtener la hora del sistema
-4. mecanismo para pasar argumentos
-5. comparación de políticas de planificación
+4. comparación de políticas de planificación
 
 
 Tiempo: 2 semanas
@@ -177,8 +176,46 @@ Implementación _genérica_ de listas (include/geekos/list.h)
 ---
 
 
-Próxima clase
+Sys_GetTimeOfDay: Hora del sistema
+==================================
+
+
+return g_numTicks
+
+Podemos usarlo para calcular la duración de un proceso.
+
+
+---
+
+
+Comparemos políticas de planificación
+=====================================
+
+Probemos los límites de nuestras políticas:
+
+% /c/workload.exe rr 2
+
+% /c/workload.exe rr 100
+
+% /c/workload.exe mlf 2
+
+% /c/workload.exe mlf 100
+
+
+---
+
+Otras pruebas
 =============
 
-* compararemos las políticas de planificación
+Hacer programas que hagan I/O-bound y CPU-bound que calculen _wall time_.
 
+Comparar el wall time bajo distintas políticas y distintos quantum.
+
+
+---
+
+
+Nota
+====
+
+Modificar shell.c para que acepte el operador &
