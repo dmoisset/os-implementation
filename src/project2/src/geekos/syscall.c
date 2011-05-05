@@ -60,7 +60,25 @@ static int Sys_Exit(struct Interrupt_State* state)
  */
 static int Sys_PrintString(struct Interrupt_State* state)
 {
-    TODO("PrintString system call");
+    char *message = NULL;
+    ulong_t len = state->ecx;
+
+    if (len > 1024){
+        return -1;
+    }
+
+    message = Malloc(sizeof(char) * len + 1);
+    if (message == NULL) {
+        return -1;
+    }
+
+    if (!Copy_From_User(message, state->ebx, len)) {
+        Free(message);
+        return -1;
+    }
+
+    Put_Buf(message, len);
+    Free(message);
     return 0;
 }
 
