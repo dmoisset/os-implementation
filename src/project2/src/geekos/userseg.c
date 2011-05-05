@@ -251,8 +251,18 @@ bool Copy_From_User(void* destInKernel, ulong_t srcInUser, ulong_t bufSize)
      * - make sure the user buffer lies entirely in memory belonging
      *   to the process
      */
-    TODO("Copy memory from user buffer to kernel buffer");
-    Validate_User_Memory(NULL,0,0); /* delete this; keeps gcc happy */
+    bool mem_valid = false;
+
+    if (g_currentThread->userContext != NULL) {
+        mem_valid = Validate_User_Memory(g_currentThread->userContext,
+                                            srcInUser, bufSize);
+        if (mem_valid) {
+                memcpy(destInKernel,
+                        g_currentThread->userContext->memory+srcInUser,
+                        bufSize);
+        }
+    }
+    return mem_valid;
 }
 
 /*
@@ -274,7 +284,17 @@ bool Copy_To_User(ulong_t destInUser, void* srcInKernel, ulong_t bufSize)
     /*
      * Hints: same as for Copy_From_User()
      */
-    TODO("Copy memory from kernel buffer to user buffer");
+    bool mem_valid = false;
+
+    if (g_currentThread->userContext != NULL) {
+        mem_valid = Validate_User_Memory(g_currentThread->userContext,
+                                            destInUser, bufSize);
+        if (mem_valid) {
+            memcpy(g_currentThread->userContext->memory+destInUser, srcInKernel,
+                    bufSize);
+        }
+    }
+    return mem_valid;
 }
 
 /*
