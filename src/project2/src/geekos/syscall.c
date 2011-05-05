@@ -156,8 +156,55 @@ static int Sys_PutCursor(struct Interrupt_State* state)
  */
 static int Sys_Spawn(struct Interrupt_State* state)
 {
-    TODO("Spawn system call");
-    return 0;
+    int retVal = -1;
+    char *exeName = NULL;
+    char *command = NULL;
+    ulong_t exeNameLen = state->ecx + 1; /* +1 to add the 0 NULL later */
+    ulong_t commandLen = state->esi + 1; /* +1 to add the 0 NULL later */
+    struct Kernel_Thread* kthread = NULL;
+
+    /* get some memory for the exe name and the args */
+    exeName = (char*) Malloc(exeNameLen);
+    if (exeName == NULL)
+        goto memfail;
+    command = (char*) Malloc(commandLen);
+    if (command == NULL)
+        goto memfail;
+
+    memset(exeName, '\0', exeNameLen);
+    if(!Copy_From_User(exeName, state->ebx, exeNameLen)){
+        retVal = EUNSPECIFIED;
+        goto fail;
+    }
+    memset(command, '\0', commandLen);
+    if(!Copy_From_User(command, state->edx, commandLen)) {
+        retVal = EUNSPECIFIED;
+        goto fail;
+    }
+
+    Enable_Interrupts();
+    if (Spawn(exeName, command, &kthread)){
+        retVal = EUNSPECIFIED;
+        goto fail;
+    }
+    Disable_Interrupts();
+
+    if (exeName!=NULL)
+        Free(exeName);
+    if (command!=NULL)
+        Free(command);
+
+    return kthread->pid;
+
+memfail:
+    retVal = ENOMEM;
+
+fail:
+    if(exeName)
+        Free(exeName);
+    if (command)
+        Free(command);
+    return retVal;
 }
 
 /*
