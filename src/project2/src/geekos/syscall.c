@@ -73,8 +73,8 @@ static int Sys_PrintString(struct Interrupt_State* state)
  */
 static int Sys_GetKey(struct Interrupt_State* state)
 {
-    TODO("GetKey system call");
-    return 0;
+    int keyCode = Wait_For_Key();
+    return keyCode;
 }
 
 /*
@@ -85,7 +85,7 @@ static int Sys_GetKey(struct Interrupt_State* state)
  */
 static int Sys_SetAttr(struct Interrupt_State* state)
 {
-    TODO("SetAttr system call");
+    Set_Current_Attr(state->ebx);
     return 0;
 }
 
@@ -98,7 +98,14 @@ static int Sys_SetAttr(struct Interrupt_State* state)
  */
 static int Sys_GetCursor(struct Interrupt_State* state)
 {
-    TODO("GetCursor system call");
+    int r=0, c=0;
+    Get_Cursor(&r, &c);
+    if (!Copy_To_User(state->ebx, &r, sizeof(int))) {
+        return -1;
+    }
+    if (!Copy_To_User(state->ecx, &c, sizeof(int))) {
+        return -1;
+    }
     return 0;
 }
 
@@ -111,8 +118,10 @@ static int Sys_GetCursor(struct Interrupt_State* state)
  */
 static int Sys_PutCursor(struct Interrupt_State* state)
 {
-    TODO("PutCursor system call");
-    return 0;
+    if (Put_Cursor(state->ebx, state->ecx))
+        return 0;
+    else
+        return -1;
 }
 
 /*
