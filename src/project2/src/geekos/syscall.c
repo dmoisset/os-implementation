@@ -47,7 +47,10 @@ static int Sys_Null(struct Interrupt_State* state)
  */
 static int Sys_Exit(struct Interrupt_State* state)
 {
-    TODO("Exit system call");
+    Enable_Interrupts();
+    Detach_User_Context(g_currentThread);
+    Disable_Interrupts();
+    Exit(state->ebx);
     return 0;
 }
 
