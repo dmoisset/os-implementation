@@ -160,8 +160,7 @@ static int Sys_Wait(struct Interrupt_State* state)
  */
 static int Sys_GetPID(struct Interrupt_State* state)
 {
-    TODO("GetPID system call");
-    return 0;
+    return g_currentThread->pid;
 }
 
 
