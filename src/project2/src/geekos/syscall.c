@@ -216,8 +216,16 @@ fail:
  */
 static int Sys_Wait(struct Interrupt_State* state)
 {
-    TODO("Wait system call");
-    return 0;
+    int exit_code = -1;
+    struct Kernel_Thread *kthread = Lookup_Thread(state->ebx);
+    if (kthread==NULL)
+        return -1;
+
+    Enable_Interrupts();
+    exit_code = Join(kthread);
+    Disable_Interrupts();
+
+    return exit_code;
 }
 
 /*
