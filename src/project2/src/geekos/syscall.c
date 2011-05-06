@@ -183,8 +183,7 @@ static int Sys_Spawn(struct Interrupt_State* state)
     }
 
     Enable_Interrupts();
-    if (Spawn(exeName, command, &kthread)){
-        retVal = EUNSPECIFIED;
+    if ((retVal = Spawn(exeName, command, &kthread))) {
         goto fail;
     }
     Disable_Interrupts();
