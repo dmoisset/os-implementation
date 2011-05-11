@@ -43,7 +43,7 @@
 #  define ROOT_PREFIX "c"
 #endif
 
-#define INIT_PROGRAM "/" ROOT_PREFIX "/null.exe"
+#define INIT_PROGRAM "/" ROOT_PREFIX "/shell.exe"
 
 
 

@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<!--
+  Copyright 2010 Google Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+  Original slides: Marcin Wichary (mwichary@google.com)
+  Modifications: Ernest Delgado (ernestd@google.com)
+                 Alex Russell (slightlyoff@chromium.org)
+
+  landslide modifications: Adam Zapletal (adamzap@gmail.com)
+                           Nicolas Perriault (nperriault@gmail.com)
+-->
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Proyecto 3: planificación y sincronización</title>
+    <!-- Styles -->
+    
+    <style type="text/css" media="print">
+      * {
+    margin: 0;
+    padding: 0;
+}
+@page {
+    size: landscape;
+}
+body {
+    font: 100% "Lucida Grande", "Trebuchet MS", Verdana, sans-serif;
+    padding: 0;
+    margin: 0;
+}
+div.slide {
+    min-width: 800px;
+    min-height: 600px;
+    padding: 1em;
+    overflow: hidden;
+    page-break-after: always;
+    border: 1px solid black;
+    border-radius: 20px;
+}
+div.slide div.inner {
+    width: 800px;
+    height: 600px;
+    margin: auto;
+    display: table-cell;
+}
+h1 {
+    font-size: 2.4em;
+}
+h2 {
+    font-size: 1.4em;
+}
+h3 {
+    margin: 1em 0;
+}
+ul {
+    margin: 0;
+    padding: 0;
+}
+p, li, pre {
+    margin: 1em 0;
+}
+li {
+    margin-left: 2em;
+}
+a {
+    color: #000000;
+}
+pre, code {
+    max-width: 800px;
+    background: #eee;
+    font-family: Monaco, monospace;
+    font-size: 90%;
+}
+pre {
+    padding: .2em .5em;
+    overflow: hidden;
+    border-radius: .8em;
+}
+code {
+    padding: 0 .2em;
+}
+.slide header:only-child h1 {
+  line-height: 180%;
+  text-align: center;
+  display: table-cell;
+  vertical-align: middle;
+  height: 600px;
+  width: 800px;
+  font-size: 48px;
+  margin-top:100px;
+  margin-bottom:100px;
+}
+#toc, #help, .slide aside, .slide footer, .slide .notes {
+  display: none;
+}
+
+    </style>
+    <style type="text/css" media="screen, projection">
+      body {
+  font: 14px "Lucida Grande", "Trebuchet MS", Verdana, sans-serif;
+  background: #778;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+div.presentation {
+  position: absolute;
+  width: 100%;
+  display: table-cell;
+  vertical-align: middle;
+  height: 100%;
+  background: inherit;
+}
+
+div.slides {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  left: 0;
+  top: 0;
+  position: absolute;
+  display: block;
+  -webkit-transition: -webkit-transform 1s ease-in-out;
+  -moz-transition: -moz-transform 1s ease-in-out;
+  -o-transition: -o-transform 1s ease-in-out;
+}
+
+div.slide {
+  display: none;
+  position: absolute;
+  overflow: hidden;
+  width: 900px;
+  height: 700px;
+  left: 50%;
+  top: 50%;
+  margin-top: -350px;
+  background: -webkit-gradient(linear, left bottom, left top, from(#bbd), to(#fff));
+  background-color: #eee;
+  background: -moz-linear-gradient(bottom, #bbd, #fff);
+  -webkit-transition: margin 0.25s ease-in-out;
+  -moz-transition: margin 0.25s ease-in-out;
+  -o-transition: margin 0.25s ease-in-out;
+  border-top-left-radius: 20px;
+  -moz-border-radius-topleft: 20px;
+  -webkit-border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  -moz-border-radius-topright: 20px;
+  -webkit-border-top-right-radius: 20px;
+  border-bottom-right-radius: 20px;
+  -moz-border-radius-bottomright: 20px;
+  -webkit-border-bottom-right-radius: 20px;
+  border-bottom-left-radius: 20px;
+  -moz-border-radius-bottomleft: 20px;
+  -webkit-border-bottom-left-radius: 20px;
+}
+
+div.slide p {
+  font-size: 20px;
+}
+
+.slide.far-past {
+  display: block;
+  margin-left: -2400px;
+}
+
+.slide.past {
+  display: block;
+  margin-left: -1400px;
+}
+
+.slide.current {
+  display: block;
+  margin-left: -450px;
+}
+
+.slide.future {
+  display: block;
+  margin-left: 500px;
+}
+
+.slide.far-future {
+  display: block;
+  margin-left: 1500px;
+}
+
+body.three-d div.slides {
+  -webkit-transform: translateX(50px) scale(0.8) rotateY(10deg);
+  -moz-transform: translateX(50px) scale(0.8) rotateY(10deg);
+  -o-transform: translateX(50px) scale(0.8) rotateY(10deg);
+}
+
+
+/* Content */
+
+header:not(:only-child) {
+  font-family: 'Lucida Grande';
+  font-weight: normal;
+  font-size: 50px;
+  letter-spacing: -.05em;
+  color: white;
+  color: black;
+  text-shadow: rgba(0, 0, 0, 0.2) 0 2px 5px;
+  position: absolute;
+  left: 30px;
+  top: 25px;
+  margin: 0;
+  padding: 0;
+}
+
+header h1, header h2 {
+  display: inline;
+  font-size: 100%;
+  font-weight: normal;
+  padding: 0;
+  margin: 0;
+}
+
+header h2:first-child {
+  margin-top: 0;
+}
+
+section, .slide header:only-child h1 {
+  font-family: 'Lucida Grande';
+  color: #3f3f3f;
+  text-shadow: rgba(0, 0, 0, 0.2) 0 2px 5px;
+  margin-left: 30px;
+  margin-right: 30px;
+  margin-top: 100px;
+  display: block;
+  overflow: hidden;
+}
+
+a {
+  color: inherit;
+  display: inline-block;
+  text-decoration: none;
+  line-height: 110%;
+  border-bottom: 2px solid #3f3f3f;
+}
+
+pre {
+  font-size: 16px;
+  font-family: Monaco, Courier, monospace;
+}
+
+li {
+  padding: 10px 0;
+  font-size: 20px;
+}
+
+.slide header:only-child h1 {
+  line-height: 180%;
+  text-align: center;
+  display: table-cell;
+  vertical-align: middle;
+  height: 700px;
+  width: 900px;
+  font-size: 50px;
+  margin-top:100px;
+  margin-bottom:100px;
+}
+
+.sidebar {
+  background: -webkit-gradient(linear, top right, bottom right, from(#dde), to(#fff));
+  -webkit-transition: margin 0.25s ease-in-out;
+  background-color: #eee;
+  background: -moz-linear-gradient(right, #dde, #fff);
+  border-right: 5px solid #ccd;
+  z-index: 9999999;
+  height: 100%;
+  overflow: hidden;
+  top: 0;
+  position: absolute;
+  display: block;
+  margin: 0;
+  margin-left: -400px;
+  padding: 10px 16px;
+  overflow: auto;
+  -webkit-transition: margin 0.2s ease-in-out;
+  -moz-transition: margin 0.2s ease-in-out;
+  -o-transition: margin 0.2s ease-in-out;
+}
+
+.sidebar h2 {
+  text-shadow: rgba(0, 0, 0, 0.2) 0 2px 5px;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.sidebar table {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border-collapse: collapse;
+}
+
+.sidebar table caption {
+  display: none;
+}
+
+.sidebar tr {
+  margin: 2px 0;
+  border-bottom: 1px solid #ccc;
+}
+
+.sidebar th {
+  text-align: left;
+  font-weight: normal;
+  max-width: 300px;
+  overflow: hidden;
+}
+
+.sidebar tr.sub th {
+  text-indent: 20px;
+}
+
+.sidebar td {
+  text-align: right;
+  min-width: 20px;
+}
+
+.sidebar a {
+  display: block;
+  text-decoration: none;
+  border-bottom: none;
+  padding: 4px 0;
+}
+
+.sidebar tr.active {
+  background: #ff0;
+}
+
+aside {
+  display: none;
+}
+  aside.source {
+    position: absolute;
+    bottom: 6px;
+    left: 10px;
+    text-indent: 10px;
+  }
+  aside.page_number {
+    position: absolute;
+    bottom: 6px;
+    right: 10px;
+    text-indent: 10px;
+  }
+
+.notes {
+  display: none;
+  padding: 10px;
+  background: #ccc;
+  border-radius: 10px;
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+}
+  div.slide p.notes {
+    font-size: 90%;
+}
+
+/* Pygments default theme */
+.hll { background-color: #ffffcc }
+.c { color: #408080; font-style: italic } /* Comment */
+.err { border: 1px solid #FF0000 } /* Error */
+.k { color: #008000; font-weight: bold } /* Keyword */
+.o { color: #666666 } /* Operator */
+.cm { color: #408080; font-style: italic } /* Comment.Multiline */
+.cp { color: #BC7A00 } /* Comment.Preproc */
+.c1 { color: #408080; font-style: italic } /* Comment.Single */
+.cs { color: #408080; font-style: italic } /* Comment.Special */
+.gd { color: #A00000 } /* Generic.Deleted */
+.ge { font-style: italic } /* Generic.Emph */
+.gr { color: #FF0000 } /* Generic.Error */
+.gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.gi { color: #00A000 } /* Generic.Inserted */
+.go { color: #808080 } /* Generic.Output */
+.gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.gs { font-weight: bold } /* Generic.Strong */
+.gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.gt { color: #0040D0 } /* Generic.Traceback */
+.kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.kp { color: #008000 } /* Keyword.Pseudo */
+.kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.kt { color: #B00040 } /* Keyword.Type */
+.m { color: #666666 } /* Literal.Number */
+.s { color: #BA2121 } /* Literal.String */
+.na { color: #7D9029 } /* Name.Attribute */
+.nb { color: #008000 } /* Name.Builtin */
+.nc { color: #0000FF; font-weight: bold } /* Name.Class */
+.no { color: #880000 } /* Name.Constant */
+.nd { color: #AA22FF } /* Name.Decorator */
+.ni { color: #999999; font-weight: bold } /* Name.Entity */
+.ne { color: #D2413A; font-weight: bold } /* Name.Exception */
+.nf { color: #0000FF } /* Name.Function */
+.nl { color: #A0A000 } /* Name.Label */
+.nn { color: #0000FF; font-weight: bold } /* Name.Namespace */
+.nt { color: #008000; font-weight: bold } /* Name.Tag */
+.nv { color: #19177C } /* Name.Variable */
+.ow { color: #AA22FF; font-weight: bold } /* Operator.Word */
+.w { color: #bbbbbb } /* Text.Whitespace */
+.mf { color: #666666 } /* Literal.Number.Float */
+.mh { color: #666666 } /* Literal.Number.Hex */
+.mi { color: #666666 } /* Literal.Number.Integer */
+.mo { color: #666666 } /* Literal.Number.Oct */
+.sb { color: #BA2121 } /* Literal.String.Backtick */
+.sc { color: #BA2121 } /* Literal.String.Char */
+.sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.s2 { color: #BA2121 } /* Literal.String.Double */
+.se { color: #BB6622; font-weight: bold } /* Literal.String.Escape */
+.sh { color: #BA2121 } /* Literal.String.Heredoc */
+.si { color: #BB6688; font-weight: bold } /* Literal.String.Interpol */
+.sx { color: #008000 } /* Literal.String.Other */
+.sr { color: #BB6688 } /* Literal.String.Regex */
+.s1 { color: #BA2121 } /* Literal.String.Single */
+.ss { color: #19177C } /* Literal.String.Symbol */
+.bp { color: #008000 } /* Name.Builtin.Pseudo */
+.vc { color: #19177C } /* Name.Variable.Class */
+.vg { color: #19177C } /* Name.Variable.Global */
+.vi { color: #19177C } /* Name.Variable.Instance */
+.il { color: #666666 } /* Literal.Number.Integer.Long */
+
+    </style>
+    
+    <!-- /Styles -->
+    <!-- Javascripts -->
+    
+    <script>
+      function main() {
+  // Since we don't have the fallback of attachEvent and
+  // other IE only stuff we won't try to run JS for IE.
+  // It will run though when using Google Chrome Frame
+  if (document.all) { return; }
+
+  var currentSlideNo;
+  var notesOn = false;
+  var slides = document.getElementsByClassName('slide');
+  var touchStartX = 0;
+  var spaces = /\s+/, a1 = [""];
+  var tocOpened = false;
+  var helpOpened = false;
+
+  var str2array = function(s) {
+    if (typeof s == "string" || s instanceof String) {
+      if (s.indexOf(" ") < 0) {
+        a1[0] = s;
+        return a1;
+      } else {
+        return s.split(spaces);
+      }
+    }
+    return s;
+  };
+
+  var trim = function(str) {
+    return str.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
+  };
+
+  var addClass = function(node, classStr) {
+    classStr = str2array(classStr);
+    var cls = " " + node.className + " ";
+    for (var i = 0, len = classStr.length, c; i < len; ++i) {
+      c = classStr[i];
+      if (c && cls.indexOf(" " + c + " ") < 0) {
+        cls += c + " ";
+      }
+    }
+    node.className = trim(cls);
+  };
+
+  var removeClass = function(node, classStr) {
+    var cls;
+    if (classStr !== undefined) {
+      classStr = str2array(classStr);
+      cls = " " + node.className + " ";
+      for (var i = 0, len = classStr.length; i < len; ++i) {
+        cls = cls.replace(" " + classStr[i] + " ", " ");
+      }
+      cls = trim(cls);
+    } else {
+      cls = "";
+    }
+    if (node.className != cls) {
+      node.className = cls;
+    }
+  };
+
+  var getSlideEl = function(slideNo) {
+    if (slideNo > 0) {
+      return slides[slideNo - 1];
+    } else {
+      return null;
+    }
+  };
+
+  var getSlideTitle = function(slideNo) {
+    var el = getSlideEl(slideNo);
+    if (el) {
+      var headers = el.getElementsByTagName('header');
+      if (headers.length > 0) {
+        return el.getElementsByTagName('header')[0].innerText;
+      }
+    }
+    return null;
+  };
+
+  var changeSlideElClass = function(slideNo, className) {
+    var el = getSlideEl(slideNo);
+    if (el) {
+      removeClass(el, 'far-past past current future far-future');
+      addClass(el, className);
+    }
+  };
+
+  var updateSlideClasses = function() {
+    window.location.hash = "slide" + currentSlideNo;
+
+    for (var i=1; i<currentSlideNo-1; i++) {
+      changeSlideElClass(i, 'far-past');
+    }
+
+    changeSlideElClass(currentSlideNo - 1, 'past');
+    changeSlideElClass(currentSlideNo, 'current');
+    changeSlideElClass(currentSlideNo + 1, 'future');
+
+    for (var i=currentSlideNo+2; i<slides.length+1; i++) {
+      changeSlideElClass(i, 'far-future');
+    }
+
+    highlightCurrentTocLink();
+
+    document.getElementsByTagName('title')[0].innerText = getSlideTitle(currentSlideNo);
+  };
+
+  var highlightCurrentTocLink = function() {
+    var tocRows = document.getElementById('toc').getElementsByTagName('tr');
+    for (var i=0; i<tocRows.length; i++) {
+      removeClass(tocRows.item(i), 'active');
+    }
+
+    var currentTocRow = document.getElementById('toc-row-' + currentSlideNo);
+    if (currentTocRow) {
+      addClass(currentTocRow, 'active');
+    }
+  }
+
+  var nextSlide = function() {
+    if (currentSlideNo < slides.length) {
+      currentSlideNo++;
+    }
+    updateSlideClasses();
+  };
+
+  var prevSlide = function() {
+    if (currentSlideNo > 1) {
+      currentSlideNo--;
+    }
+    updateSlideClasses();
+  };
+
+  var showNotes = function() {
+    var notes = getSlideEl(currentSlideNo).getElementsByClassName('notes');
+    for (var i = 0, len = notes.length; i < len; i++) {
+      notes.item(i).style.display = (notesOn) ? 'none':'block';
+    }
+    notesOn = (notesOn) ? false : true;
+  };
+
+  var showSlideNumbers = function() {
+    var asides = document.getElementsByClassName('page_number');
+    var hidden = asides[0].style.display != 'block';
+    for (var i = 0; i < asides.length; i++) {
+      asides.item(i).style.display = hidden ? 'block' : 'none';
+    }
+  };
+
+  var showSlideSources = function() {
+    var asides = document.getElementsByClassName('source');
+    var hidden = asides[0].style.display != 'block';
+    for (var i = 0; i < asides.length; i++) {
+      asides.item(i).style.display = hidden ? 'block' : 'none';
+    }
+  };
+
+  var showToc = function() {
+    if (helpOpened) {
+        showHelp();
+    }
+
+    var toc = document.getElementById('toc');
+
+    toc.style.marginLeft = tocOpened ? '-400px' : '0px';
+
+    tocOpened = !tocOpened;
+  };
+
+  var showHelp = function() {
+    var help = document.getElementById('help');
+
+    help.style.marginLeft = helpOpened ? '-400px' : '0px';
+
+    helpOpened = !helpOpened;
+  };
+
+  var switch3D = function() {
+    if (document.body.className.indexOf('three-d') == -1) {
+      document.getElementsByClassName('presentation')[0].style.webkitPerspective = '1000px';
+      document.body.className += ' three-d';
+    } else {
+      window.setTimeout("document.getElementsByClassName('presentation')[0].style.webkitPerspective = '0';", 2000);
+      document.body.className = document.body.className.replace(/three-d/, '');
+    }
+  };
+
+  var handleBodyKeyDown = function(event) {
+    switch (event.keyCode) {
+      case 37: // left arrow
+        prevSlide();
+        break;
+      case 39: // right arrow
+      case 32: // space
+        nextSlide();
+        break;
+      case 50: // 2
+        showNotes();
+        break;
+      case 51: // 3
+        switch3D();
+        break;
+      case 72: // h
+        showHelp();
+        break;
+      case 78: // n
+        showSlideNumbers();
+        break;
+      case 83: // s
+        showSlideSources();
+        break;
+      case 84: // t
+        showToc();
+        break;
+    }
+  };
+
+  var handleWheel = function(event) {
+    if (tocOpened || helpOpened) {
+      return;
+    }
+
+    var delta = 0;
+
+    if (!event) {
+      event = window.event;
+    }
+
+    if (event.wheelDelta) {
+      delta = event.wheelDelta/120;
+      if (window.opera) delta = -delta;
+    } else if (event.detail) {
+      delta = -event.detail/3;
+    }
+
+    if (delta && delta <0) {
+      nextSlide();
+    } else if (delta) {
+      prevSlide();
+    }
+  };
+
+  var addTouchListeners = function() {
+    document.addEventListener('touchstart', function(e) {
+      touchStartX = e.touches[0].pageX;
+    }, false);
+    document.addEventListener('touchend', function(e) {
+      var pixelsMoved = touchStartX - e.changedTouches[0].pageX;
+      var SWIPE_SIZE = 150;
+      if (pixelsMoved > SWIPE_SIZE) {
+        nextSlide();
+      }
+      else if (pixelsMoved < -SWIPE_SIZE) {
+       prevSlide();
+      }
+    }, false);
+  };
+
+  var addTocLinksListeners = function() {
+    var tocLinks = document.getElementById('toc').getElementsByTagName('a');
+    for (var i=0; i < tocLinks.length; i++) {
+      tocLinks.item(i).addEventListener('click', function(e) {
+        currentSlideNo = Number(this.attributes['href'].value.replace('#slide', ''));
+        updateSlideClasses();
+        return false;
+      }, true);
+    }
+  };
+
+  // initialize
+
+  (function() {
+    if (window.location.hash != "") {
+      currentSlideNo = Number(window.location.hash.replace('#slide', ''));
+    } else {
+      currentSlideNo = 1;
+    }
+
+    document.addEventListener('keydown', handleBodyKeyDown, false);
+    document.addEventListener('DOMMouseScroll', handleWheel, false);
+    window.onmousewheel = document.onmousewheel = handleWheel
+
+    var els = slides;
+    for (var i = 0, el; el = els[i]; i++) {
+      addClass(el, 'slide far-future');
+    }
+    updateSlideClasses();
+
+    // add support for finger events (filter it by property detection?)
+    addTouchListeners();
+
+    addTocLinksListeners();
+  })();
+};
+
+    </script>
+    
+    <!-- /Javascripts -->
+</head>
+<body>
+  <div class="presentation">
+    <div class="slides">
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Proyecto 3: planificación y sincronización</h1></header>
+          
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            1/17
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Este proyecto</h1></header>
+          
+          
+          <section><ol>
+<li>nueva política de planificación</li>
+<li>nueva primitiva de sincronización</li>
+<li>mecanismo para obtener la hora del sistema</li>
+<li>comparación de políticas de planificación</li>
+</ol>
+<p>Tiempo: 2 semanas</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            2/17
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Implementación actual</h1></header>
+          
+          
+          <section><p>GeekOS implementa Round-Robin con una única cola</p>
+<p>Todos los procesos son asignados turnos secuencialmente</p>
+<p>Cada proceso recibe un turno de tamaño fijo</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            3/17
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Planificador MLFQ</h1></header>
+          
+          
+          <section><p>Planificador multinivel con retroalimentación (Multi-Level Feedback Queue)</p>
+<p>Descripto por Corbato et al. en 1962 (CTSS)</p>
+<p>Ajusta la prioridad de los procesos de acuerdo a su comportamiento</p>
+<p>Procesos con mucho I/O son más prioritarios</p>
+<p><a href="http://pages.cs.wisc.edu/~remzi/OSFEP/cpu-sched-mlfq.pdf" title="Scheduling: The Multi-Level Feedback Queue">Explicación completa de MLFQ</a></p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            4/17
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Algoritmo</h1></header>
+          
+          
+          <section><ul>
+<li>4 colas (0: máxima prioridad - 3: mínima prioridad)</li>
+<li>todo nuevo thread comienza con máxima prioridad</li>
+<li>para planificar un proceso, se toma la cabeza de la cola con máxima prioridad</li>
+<li>si está vacía, pasar a la siguiente (repetir hasta encontrar un proceso)</li>
+<li>si un proceso termina su <em>quantum</em>, pasa a la próxima cola con menos prioridad<ul>
+<li>si llega a la cola 3 no puede bajar más</li>
+</ul>
+</li>
+<li>si un proceso se bloquea, pasa a la próxima cola con más prioridad<ul>
+<li>si llega a la cola 0 no puede subir más</li>
+</ul>
+</li>
+<li>caso especial: Idle (prioridad 3 siempre!)</li>
+</ul></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            5/17
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Cambio de política</h1></header>
+          
+          
+          <section><p>Implementar la <em>system call</em> Sys_SetSchedulingPolicy</p>
+<ul>
+<li>política de planificación (state-&gt;ebx)<ul>
+<li>0 =&gt; round-robin</li>
+<li>1 =&gt; mlfq</li>
+<li>otros valores =&gt; error</li>
+</ul>
+</li>
+<li><em>quantum</em> en número de ticks (state-&gt;ecx)<ul>
+<li>cambiar constante MAX_TICKS por variable (timer.c)</li>
+<li>valores permitidos [2, 100]</li>
+</ul>
+</li>
+</ul></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            6/17
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Interpretación gráfica</h1></header>
+          
+          
+          <section><p><a href="http://www.cs.umd.edu/class/spring2005/cmsc412/proj3/scenarios.pdf" title="escenarios">Posibles escenarios</a></p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            7/17
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Sincronización</h1></header>
+          
+          
+          <section><p>Implementaremos semáforos (src/geekos/syscall.c)</p>
+<p>4 nuevas <em>system calls</em>:</p>
+<ul>
+<li>Sys_CreateSemaphore</li>
+<li>Sys_P</li>
+<li>Sys_V</li>
+<li>Sys_DestroySemaphore</li>
+</ul>
+<p>Sugerencia: mover la implementación de semáforos a nuevos archivos (sem.c y sem.h)</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            8/17
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Sys_CreateSemaphore</h1></header>
+          
+          
+          <section><p>Crea un semáforo</p>
+<p>state-&gt;ebx: nombre del semáforo</p>
+<p>state-&gt;ecx: longitud del nombre</p>
+<p>cantidad de semáforos &gt;= 20</p>
+<p>nombres hasta 25 caracteres</p>
+<p>Si el nombre es nuevo, crea un semáforo y lo agrega a la lista de semáforos.</p>
+<p>Si el nombre ya existe, devuelve el semáforo existente.</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            9/17
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Sys_P</h1></header>
+          
+          
+          <section><p>Obtiene el semáforo.</p>
+<p>Espera a que el valor del semáforo sea mayor a 0, lo decrementa en 1 y luego continúa.</p>
+<p>Puede bloquear el proceso.</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            10/17
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Sys_V</h1></header>
+          
+          
+          <section><p>Libera el semáforo</p>
+<p>Incrementa el valor del semáforo en 1 y continúa.</p>
+<p>Nunca bloquea.</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            11/17
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Sys_DestroySemaphore</h1></header>
+          
+          
+          <section><p>Elimina el semáforo</p>
+<p>Si no hay más referencias al semáforo, lo quita de la lista.</p>
+<p>Debe ser llamada automáticamente si un proceso termina y no destruyó sus semáforos.</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            12/17
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Manejo de listas</h1></header>
+          
+          
+          <section><p>Implementación <em>genérica</em> de listas (include/geekos/list.h)</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            13/17
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Sys_GetTimeOfDay: Hora del sistema</h1></header>
+          
+          
+          <section><p>return g_numTicks</p>
+<p>Podemos usarlo para calcular la duración de un proceso.</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            14/17
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Comparemos políticas de planificación</h1></header>
+          
+          
+          <section><p>Probemos los límites de nuestras políticas:</p>
+<p>% /c/workload.exe rr 2</p>
+<p>% /c/workload.exe rr 100</p>
+<p>% /c/workload.exe mlf 2</p>
+<p>% /c/workload.exe mlf 100</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            15/17
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Otras pruebas</h1></header>
+          
+          
+          <section><p>Hacer programas que hagan I/O-bound y CPU-bound que calculen <em>wall time</em>.</p>
+<p>Comparar el wall time bajo distintas políticas y distintos quantum.</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            16/17
+          </aside>
+        </footer>
+      </div>
+      
+      <!-- slide source: proy3.md -->
+      <div class="slide">
+        <div class="inner">
+          
+          <header><h1>Nota</h1></header>
+          
+          
+          <section><p>Modificar shell.c para que acepte el operador &amp;</p></section>
+          
+        </div>
+        <footer>
+          
+          <aside class="source">
+            Source: <a href="file:///home/edgardo/famaf/implsistop/main-os-implementation/slides/project3/proy3.md">proy3.md</a>
+          </aside>
+          
+          <aside class="page_number">
+            17/17
+          </aside>
+        </footer>
+      </div>
+      
+    </div>
+  </div>
+  
+  <div id="toc" class="sidebar hidden">
+    <h2>Table of Contents</h2>
+    <table>
+      <caption>Table of Contents</caption>
+            
+      <tr id="toc-row-1">
+        <th><a href="#slide1">Proyecto 3: planificación y sincronización</a></th>
+        <td><a href="#slide1">1</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-2">
+        <th><a href="#slide2">Este proyecto</a></th>
+        <td><a href="#slide2">2</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-3">
+        <th><a href="#slide3">Implementación actual</a></th>
+        <td><a href="#slide3">3</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-4">
+        <th><a href="#slide4">Planificador MLFQ</a></th>
+        <td><a href="#slide4">4</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-5">
+        <th><a href="#slide5">Algoritmo</a></th>
+        <td><a href="#slide5">5</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-6">
+        <th><a href="#slide6">Cambio de política</a></th>
+        <td><a href="#slide6">6</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-7">
+        <th><a href="#slide7">Interpretación gráfica</a></th>
+        <td><a href="#slide7">7</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-8">
+        <th><a href="#slide8">Sincronización</a></th>
+        <td><a href="#slide8">8</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-9">
+        <th><a href="#slide9">Sys_CreateSemaphore</a></th>
+        <td><a href="#slide9">9</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-10">
+        <th><a href="#slide10">Sys_P</a></th>
+        <td><a href="#slide10">10</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-11">
+        <th><a href="#slide11">Sys_V</a></th>
+        <td><a href="#slide11">11</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-12">
+        <th><a href="#slide12">Sys_DestroySemaphore</a></th>
+        <td><a href="#slide12">12</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-13">
+        <th><a href="#slide13">Manejo de listas</a></th>
+        <td><a href="#slide13">13</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-14">
+        <th><a href="#slide14">Sys_GetTimeOfDay: Hora del sistema</a></th>
+        <td><a href="#slide14">14</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-15">
+        <th><a href="#slide15">Comparemos políticas de planificación</a></th>
+        <td><a href="#slide15">15</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-16">
+        <th><a href="#slide16">Otras pruebas</a></th>
+        <td><a href="#slide16">16</a></td>
+      </tr>
+      
+            
+      <tr id="toc-row-17">
+        <th><a href="#slide17">Nota</a></th>
+        <td><a href="#slide17">17</a></td>
+      </tr>
+      
+      
+    </table>
+  </div>
+  
+  <div id="help" class="sidebar hidden">
+    <h2>Help</h2>
+    <table>
+      <caption>Help</caption>
+      <tr>
+        <th>Table of Contents</th>
+        <td>t</td>
+      </tr>
+      <tr>
+        <th>Source Files</th>
+        <td>s</td>
+      </tr>
+      <tr>
+        <th>Slide Numbers</th>
+        <td>n</td>
+      </tr>
+      <tr>
+        <th>Notes</th>
+        <td>2</td>
+      </tr>
+      <tr>
+        <th>Help</th>
+        <td>h</td>
+      </tr>
+    </table>
+  </div>
+  <script>main()</script>
+</body>
+</html>
