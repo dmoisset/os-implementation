@@ -99,6 +99,7 @@ int Spawn(const char *program, const char *command, struct Kernel_Thread **pThre
      * If all goes well, store the pointer to the new thread in
      * pThread and return 0.  Otherwise, return an error code.
      */
+    /* Por Victor Rosales */
     char *exeFileData = 0;
     ulong_t exeFileLength = 0;
     struct Exe_Format exeFormat;
@@ -160,13 +161,9 @@ void Switch_To_User_Context(struct Kernel_Thread* kthread, struct Interrupt_Stat
      * the Set_Kernel_Stack_Pointer() and Switch_To_Address_Space()
      * functions.
      */
-    //TODO("Switch to a new user address space, if necessary");
-    
-
-    /* Kernel threads have a NULL userContext, but users threads is not NULL */
-    if (kthread->userContext != NULL){
-        Set_Kernel_Stack_Pointer((ulong_t) kthread->stackPage + PAGE_SIZE);
+    if (kthread->userContext != NULL) {
         Switch_To_Address_Space(kthread->userContext);
+        Set_Kernel_Stack_Pointer(((ulong_t) kthread->stackPage) + PAGE_SIZE);
     }
 }
 

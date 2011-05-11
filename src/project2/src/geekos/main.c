@@ -96,8 +96,6 @@ static void Mount_Root_Filesystem(void)
 
 static void Spawn_Init_Process(void)
 {
-    //TODO("Spawn the init process");
-    int pid = 0;
-    struct Kernel_Thread *pthread = 0;
-    pid = Spawn(INIT_PROGRAM, "shell.exe", &pthread);
+    struct Kernel_Thread *userThread = NULL;
+    Spawn(INIT_PROGRAM, INIT_PROGRAM, &userThread);
 }
