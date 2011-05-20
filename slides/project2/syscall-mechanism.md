@@ -289,7 +289,11 @@ Entonces al final, es una función!
 Bueno, casi
 ===========
 
+<<<<<<< HEAD:slides/project2/syscall-mechanism.md
+Se acuerdan que pasar parametros era difícil?
+=======
 Se acuerdan que pasar parámetros era difícil?
+>>>>>>> upstream/master:slides/project2/syscall-mechanism.md
  * Si son números, un registro alcanza
  * Y si son punteros?
  

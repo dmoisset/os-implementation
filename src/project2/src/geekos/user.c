@@ -23,6 +23,7 @@
  * mode processes.
  */
 
+
 /*
  * Associate the given user context with a kernel thread.
  * This makes the thread a user process.

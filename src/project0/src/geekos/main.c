@@ -22,6 +22,7 @@
 #include <geekos/keyboard.h>
 
 
+static void Project0(ulong_t arg);
 
 
 /*
@@ -48,7 +49,8 @@ void Main(struct Boot_Info* bootInfo)
     Set_Current_Attr(ATTRIB(BLACK, GRAY));
 
 
-    TODO("Start a kernel thread to echo pressed keys and print counts");
+    Start_Kernel_Thread(Project0, 0, PRIORITY_NORMAL, false);
+    //TODO("Start a kernel thread to echo pressed keys and print counts");
 
 
 
@@ -56,6 +58,39 @@ void Main(struct Boot_Info* bootInfo)
     Exit(0);
 }
 
+
+/* 
+ * This is the body of the Project0 thread. Its job is to print
+ * "Hello from Victor" and then use the Wait_For_Key() until (control-d)
+ * character is pressed
+ */
+static void Project0(ulong_t arg)
+{
+    Keycode keycode;
+    int count = 1;
+    
+    Print("Hello from Victor\n");
+
+    do {
+        /* Wait for key pressed */
+        keycode = Wait_For_Key();
+        /* Check if the key was pressed and actually keep only the 
+         * release event (which is the same key)
+         */
+        if (keycode & KEY_RELEASE_FLAG) 
+            Print("Key Pressed: %c\n Count: %d\n", keycode, count++);
+        /* Stop when we recive 0x4064, which is:
+         * KEY_CTRL_FLAG = 0x4000
+         * d = 0x0064
+         */
+    } while (keycode != 0x4064); 
+
+    Print("Echo terminated :)\n");
+    /* I saw that this gives up the CPU for other threads so 
+     * ... lets play nice
+     */
+    Yield();
+}
 
 
 

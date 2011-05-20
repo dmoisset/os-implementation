@@ -11,6 +11,15 @@
 #ifndef GEEKOS_ELF_H
 #define GEEKOS_ELF_H
 
+/* Definitions for ELF standard supported in GeekOS*/
+#define ELF_EXEC 0x2
+#define ELF_VERS 0x1
+#define ELF_ARCH 0x3
+#define EI_MAG0 0x7f
+#define EI_MAG1 'E'
+#define EI_MAG2 'L'
+#define EI_MAG3 'F'
+
 /*
  * ELF header at the beginning of the executable.
  */

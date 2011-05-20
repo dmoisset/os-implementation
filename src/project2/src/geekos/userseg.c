@@ -22,22 +22,24 @@
 #include <geekos/argblock.h>
 #include <geekos/user.h>
 
+#include <geekos/errno.h>
+
 /* ----------------------------------------------------------------------
  * Variables
  * ---------------------------------------------------------------------- */
 
 #define DEFAULT_USER_STACK_SIZE 8192
+#define LDTCS 0
+#define LDTDS 1
 
 
 /* ----------------------------------------------------------------------
  * Private functions
  * ---------------------------------------------------------------------- */
 
-
 /*
  * Create a new user context of given size
  */
-
 static struct User_Context* Create_User_Context(ulong_t size)
 {
     /* Tiene que ser múltiplo de PAGE_SIZE */

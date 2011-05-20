@@ -18,6 +18,8 @@
 #include <geekos/malloc.h>
 #include <geekos/user.h>
 
+#include <geekos/user.h> /* For Attach_User_Context() */
+
 
 /* ----------------------------------------------------------------------
  * Private data

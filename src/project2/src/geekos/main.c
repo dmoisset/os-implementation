@@ -78,9 +78,6 @@ void Main(struct Boot_Info* bootInfo)
     Print("Welcome to GeekOS!\n");
     Set_Current_Attr(ATTRIB(BLACK, GRAY));
 
-
-
-
     Spawn_Init_Process();
 
     /* Now this thread is done. */
@@ -95,13 +92,7 @@ static void Mount_Root_Filesystem(void)
 	Print("Failed to mount /" ROOT_PREFIX " filesystem\n");
     else
 	Print("Mounted /" ROOT_PREFIX " filesystem!\n");
-
 }
-
-
-
-
-
 
 static void Spawn_Init_Process(void)
 {
