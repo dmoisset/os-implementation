@@ -4,10 +4,10 @@
 #include <geekos/list.h>
 
 #define MAX_NUM_SEMAPHORES  20
-#define MAX_SEMAPHORES_NAME 25
+#define MAX_SEMAPHORE_NAME 25
 
 struct Semaphore {
-    char name[MAX_SEMAPHORES_NAME];
+    char name[MAX_SEMAPHORE_NAME];
     unsigned int resourcesCount;
     bool available;
     unsigned int refCounter;
@@ -23,5 +23,5 @@ int DestroySemaphore(int sem);
 
 int isSemaphoreCreated(char *namesem, int nameLenght);
 int getFreeSemaphore();
-bool hasAccess(int SID);
-bool validateSID(int SID);
+bool hasAccess(int sid);
+bool validateSID(int sid);
