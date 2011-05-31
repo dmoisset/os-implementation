@@ -10,15 +10,30 @@
 #include <geekos/int.h>
 
 
-struct Semaphore g_Semaphore[MAX_NUM_SEMAPHORES];
+/* Los semáforos */
+static struct Semaphore g_Semaphore[MAX_NUM_SEMAPHORES];
 
-int CreateSemaphore(char *name, int nameLenght, int initCount)
+/* Funciones auxiliares */
+static int isSemaphoreCreated(char *namesem, int nameLength);
+static int getFreeSemaphore();
+/* static bool hasAccess(int sid); */
+static bool validateSID(int sid);
+
+
+int CreateSemaphore(char *name, int nameLength, int initCount)
 {
     int sid = 0;
     int ret = -1;
 
+    /* Paranoico, soy entrypoint de userspace */
+    if (name==NULL || nameLength<=0 || initCount<0 ||
+        MAX_SEMAPHORE_NAME<nameLength ||
+        strnlen(name, MAX_SEMAPHORE_NAME)!=nameLength) {
+            return EINVALID;
+    }
+
     bool atomic = Begin_Int_Atomic();
-    sid = isSemaphoreCreated(name, nameLenght);
+    sid = isSemaphoreCreated(name, nameLength);
     Free(name);
 
     /* sid es negativo si no fue creado, de lo contrario
@@ -97,10 +112,10 @@ int DestroySemaphore(int sid){
 
 /* --- Funciones auxiliares --- */
 
-bool validateSID(int sid) {
+static bool validateSID(int sid) {
     if (sid < 0 ||
         sid >= MAX_NUM_SEMAPHORES ||
-        g_Semaphore[sid].available == false ||
+        !g_Semaphore[sid].available ||
         !Is_Bit_Set(g_currentThread->semaphores, sid))
 
         return false;
@@ -108,13 +123,13 @@ bool validateSID(int sid) {
     return true; 
 }
 
-int isSemaphoreCreated(char *namesem, int lenghtName)
+static int isSemaphoreCreated(char *namesem, int lengthName)
 {
     int sid = 0;
     int ret = -1;
 
     for (sid = 0; sid < MAX_NUM_SEMAPHORES; sid++) {
-        if (strncmp(g_Semaphore[sid].name, namesem, lenghtName) == 0) {
+        if (strncmp(g_Semaphore[sid].name, namesem, lengthName) == 0) {
             ret = sid;
             break;
         }
@@ -123,7 +138,7 @@ int isSemaphoreCreated(char *namesem, int lenghtName)
     return ret;
 }
 
-int getFreeSemaphore()
+static int getFreeSemaphore()
 {
     int sid = 0;
     int ret = -1;

@@ -7,7 +7,7 @@
 #define MAX_SEMAPHORE_NAME 25
 
 struct Semaphore {
-    char name[MAX_SEMAPHORE_NAME];
+    char name[MAX_SEMAPHORE_NAME+1]; /* '\0' terminated */
     unsigned int resourcesCount;
     bool available;
     unsigned int refCounter;
@@ -20,8 +20,3 @@ extern int CreateSemaphore(char *name, int nameLenght, int ival);
 int P(int sem);
 int V(int sem);
 int DestroySemaphore(int sem);
-
-int isSemaphoreCreated(char *namesem, int nameLenght);
-int getFreeSemaphore();
-bool hasAccess(int sid);
-bool validateSID(int sid);
