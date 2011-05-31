@@ -27,7 +27,7 @@ int CreateSemaphore(char *name, int nameLenght, int initCount)
     if (sid < 0) {
         /* Semaforo ya creado */
         g_Semaphore[sid].resourcesCount++;
-        Set_Bit(g_currentThread->semaphorBitset, sid);
+        Set_Bit(g_currentThread->semaphores, sid);
         ret = sid;
     }
 
@@ -40,7 +40,7 @@ int CreateSemaphore(char *name, int nameLenght, int initCount)
 
         g_Semaphore[sid].available = false;
         g_Semaphore[sid].resourcesCount++;
-        Set_Bit(g_currentThread->semaphorBitset, sid);
+        Set_Bit(g_currentThread->semaphores, sid);
         ret = sid;
     }
 
@@ -101,7 +101,7 @@ bool validateSID(int sid) {
     if (sid < 0 ||
         sid >= MAX_NUM_SEMAPHORES ||
         g_Semaphore[sid].available == false ||
-        !Is_Bit_Set(g_currentThread->semaphorBitset, sid))
+        !Is_Bit_Set(g_currentThread->semaphores, sid))
 
         return false;
 

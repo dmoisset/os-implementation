@@ -68,7 +68,7 @@ struct Kernel_Thread {
     int currentReadyQueue;
     bool blocked;
 
-    struct Bit_Set *semaphorBitset;
+    void* semaphores; /* Bitset of semaphores in use by this thread */
 };
 
 /*
