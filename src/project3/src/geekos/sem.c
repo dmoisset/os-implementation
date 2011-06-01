@@ -57,19 +57,6 @@ int CreateSemaphore(char *name, int nameLength, int initCount)
     return ret;
 }
 
-int V(int sid)
-{
-    if (!validateSID(sid)) {
-        return EINVALID;
-    }
-
-    bool atomic = Begin_Int_Atomic();
-    g_Semaphore[sid].resourcesCount++;
-    Wake_Up(&g_Semaphore[sid].waitingThreads);
-    End_Int_Atomic(atomic);
-    return 0;
-}
-
 int P(int sid)
 {
     KASSERT(g_Semaphore[sid].available == false);
@@ -83,6 +70,19 @@ int P(int sid)
     Wait(&g_Semaphore[sid].waitingThreads);
     End_Int_Atomic(atomic);
 
+    return 0;
+}
+
+int V(int sid)
+{
+    if (!validateSID(sid)) {
+        return EINVALID;
+    }
+
+    bool atomic = Begin_Int_Atomic();
+    g_Semaphore[sid].resourcesCount++;
+    Wake_Up(&g_Semaphore[sid].waitingThreads);
+    End_Int_Atomic(atomic);
     return 0;
 }
 
