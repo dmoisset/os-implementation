@@ -32,29 +32,25 @@ int CreateSemaphore(char *name, int nameLength, int initCount)
 
     bool atomic = Begin_Int_Atomic();
     sid = isSemaphoreCreated(name, nameLength);
-    Free(name); /* TODO: esto suena feo, name está en el stack, no hay que liberar nada */
+    KASSERT(sid<0 || sid<MAX_NUM_SEMAPHORES);
 
     /* sid es negativo si no fue creado, de lo contrario
      * sid es el ID del semaforo ya creado
      */
-    if (sid < 0) {
-        /* Semaforo ya creado */
+    if (0<=sid) { /* Semaforo ya creado */
         g_Semaphore[sid].resourcesCount++;
         Set_Bit(g_currentThread->semaphores, sid);
         ret = sid;
-    }
-
-    if (sid > 0) {
-        /* Semaforo no creado. Crear */
+    } else { /* Semaforo no creado. Crear */
         sid = getFreeSemaphore();
-        if (sid < 0) 
-            /* No hay semaforos disponibles nos vamos rapido */
-            return -1;
-
-        g_Semaphore[sid].available = false;
-        g_Semaphore[sid].resourcesCount++;
-        Set_Bit(g_currentThread->semaphores, sid);
-        ret = sid;
+        if (sid<0) { /* No hay semaforos disponibles */
+            ret = EUNSPECIFIED;
+        } else {
+            g_Semaphore[sid].available = false;
+            g_Semaphore[sid].resourcesCount++;
+            Set_Bit(g_currentThread->semaphores, sid);
+            ret = sid;
+        }
     }
 
     End_Int_Atomic(atomic);
