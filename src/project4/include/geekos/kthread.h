@@ -12,6 +12,7 @@
 
 #include <geekos/ktypes.h>
 #include <geekos/list.h>
+#include <geekos/bitset.h>
 
 struct Kernel_Thread;
 struct User_Context;
@@ -66,6 +67,8 @@ struct Kernel_Thread {
      */
     int currentReadyQueue;
     bool blocked;
+
+    void* semaphores; /* Bitset of semaphores in use by this thread */
 };
 
 /*

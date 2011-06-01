@@ -60,7 +60,7 @@ KERNEL_C_SRCS := idt.c int.c trap.c irq.c io.c \
 	elf.c blockdev.c ide.c \
 	vfs.c pfat.c bitset.c \
 	paging.c \
-	main.c
+	main.c sem.c
 
 # Kernel object files built from C source files
 KERNEL_C_OBJS := $(KERNEL_C_SRCS:%.c=geekos/%.o)
