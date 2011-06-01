@@ -329,7 +329,7 @@ static void Setup_Kernel_Thread(
      * bit clear, so that interrupts are disabled when the
      * thread starts.
      */
-    Push(kthread, EFLAGS_IF); /* EFLAGS */
+    Push(kthread, 0UL); /* EFLAGS */
 
     /* ushort_t csSelector */
     Push(kthread, userContext->csSelector);

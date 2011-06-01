@@ -106,7 +106,10 @@ static int Sys_GetKey(struct Interrupt_State* state)
 static int Sys_SetAttr(struct Interrupt_State* state)
 {
     Set_Current_Attr(state->ebx);
+<<<<<<< HEAD
     return 0;
+=======
+>>>>>>> Merge con cambios de lab3
 }
 
 /*
@@ -126,7 +129,10 @@ static int Sys_GetCursor(struct Interrupt_State* state)
     if (!Copy_To_User(state->ecx, &c, sizeof(int))) {
         return -1;
     }
+<<<<<<< HEAD
     return 0;
+=======
+>>>>>>> Merge con cambios de lab3
 }
 
 /*
