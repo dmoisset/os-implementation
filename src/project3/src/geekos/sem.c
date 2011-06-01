@@ -25,16 +25,14 @@ int CreateSemaphore(char *name, int nameLength, int initCount)
     int sid = 0;
     int ret = -1;
 
-    /* Paranoico, soy entrypoint de userspace */
-    if (name==NULL || nameLength<=0 || initCount<0 ||
-        MAX_SEMAPHORE_NAME<nameLength ||
-        strnlen(name, MAX_SEMAPHORE_NAME)!=nameLength) {
-            return EINVALID;
-    }
+    /* Contrato con la syscall */
+    KASSERT(name!=NULL && 0<nameLength && 0<=initCount &&
+        nameLength<=MAX_SEMAPHORE_NAME &&
+        strnlen(name, MAX_SEMAPHORE_NAME)==nameLength);
 
     bool atomic = Begin_Int_Atomic();
     sid = isSemaphoreCreated(name, nameLength);
-    Free(name);
+    Free(name); /* TODO: esto suena feo, name está en el stack, no hay que liberar nada */
 
     /* sid es negativo si no fue creado, de lo contrario
      * sid es el ID del semaforo ya creado
