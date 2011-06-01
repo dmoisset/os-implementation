@@ -81,6 +81,7 @@ static int Sys_PrintString(struct Interrupt_State* state)
 
     Put_Buf(message, len);
     Free(message);
+    return 0;
 }
 
 /*
@@ -105,6 +106,7 @@ static int Sys_GetKey(struct Interrupt_State* state)
 static int Sys_SetAttr(struct Interrupt_State* state)
 {
     Set_Current_Attr(state->ebx);
+    return 0;
 }
 
 /*
@@ -124,6 +126,7 @@ static int Sys_GetCursor(struct Interrupt_State* state)
     if (!Copy_To_User(state->ecx, &c, sizeof(int))) {
         return -1;
     }
+    return 0;
 }
 
 /*
@@ -244,6 +247,7 @@ static int Sys_GetPID(struct Interrupt_State* state)
 static int Sys_SetSchedulingPolicy(struct Interrupt_State* state)
 {
     TODO("SetSchedulingPolicy system call");
+    return -1;
 }
 
 /*
@@ -256,6 +260,7 @@ static int Sys_SetSchedulingPolicy(struct Interrupt_State* state)
 static int Sys_GetTimeOfDay(struct Interrupt_State* state)
 {
     TODO("GetTimeOfDay system call");
+    return -1;
 }
 
 /*
@@ -269,6 +274,7 @@ static int Sys_GetTimeOfDay(struct Interrupt_State* state)
 static int Sys_CreateSemaphore(struct Interrupt_State* state)
 {
     TODO("CreateSemaphore system call");
+    return -1;
 }
 
 /*
@@ -283,6 +289,7 @@ static int Sys_CreateSemaphore(struct Interrupt_State* state)
 static int Sys_P(struct Interrupt_State* state)
 {
     TODO("P (semaphore acquire) system call");
+    return -1;
 }
 
 /*
@@ -295,6 +302,7 @@ static int Sys_P(struct Interrupt_State* state)
 static int Sys_V(struct Interrupt_State* state)
 {
     TODO("V (semaphore release) system call");
+    return -1;
 }
 
 /*
@@ -307,6 +315,7 @@ static int Sys_V(struct Interrupt_State* state)
 static int Sys_DestroySemaphore(struct Interrupt_State* state)
 {
     TODO("DestroySemaphore system call");
+    return -1;
 }
 
 
