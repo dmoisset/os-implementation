@@ -179,11 +179,13 @@ int main(int argc, char *argv[])
     }
 
     lseek(fd, SECTOR_SIZE, SEEK_SET);
-    write(fd, fat, sizeof(int) * blocks);
+    ret = write(fd, fat, sizeof(int) * blocks);
+    assert(ret == sizeof(int) * blocks);
 
     lseek(fd, bSector.rootDirectoryOffset * SECTOR_SIZE, SEEK_SET);
     printf("putting the directory at sector %d\n", bSector.rootDirectoryOffset);
-    write(fd, directory, sizeof(directoryEntry) * fileCount);
+    ret = write(fd, directory, sizeof(directoryEntry) * fileCount);
+    assert(ret == sizeof(directoryEntry) * fileCount);
 
     /* write out boot record */
     lseek(fd, PFAT_BOOT_RECORD_OFFSET, SEEK_SET);

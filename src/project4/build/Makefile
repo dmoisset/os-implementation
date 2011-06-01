@@ -32,6 +32,8 @@ NON_ELF_SYSTEM     := yes
 EXTRA_CC_USER_OPTS := -Dmain=geekos_main
 endif
 
+EXTRA_C_OPTS=-fno-stack-protector # Otherwise we get an undefined ref in ubuntu
+
 # ----------------------------------------------------------------------
 # Configuration -
 #   Various options specifying how GeekOS should be built,
