@@ -17,6 +17,8 @@
 #include <geekos/kthread.h>
 #include <geekos/malloc.h>
 #include <geekos/user.h>
+#include <geekos/bitset.h>
+#include <geekos/sem.h>
 
 
 /* ----------------------------------------------------------------------
@@ -103,6 +105,8 @@ static void Init_Thread(struct Kernel_Thread* kthread, void* stackPage,
 
     kthread->currentReadyQueue = 0;
     kthread->blocked = false;
+    kthread->semaphores = Create_Bit_Set(MAX_NUM_SEMAPHORES);
+    KASSERT(kthread->semaphores!=NULL);
 }
 
 /*

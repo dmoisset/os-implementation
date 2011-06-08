@@ -11,14 +11,23 @@
 
 
 /* Los semáforos */
-static struct Semaphore g_Semaphore[MAX_NUM_SEMAPHORES];
+struct Semaphore g_Semaphores[MAX_NUM_SEMAPHORES];
 
 /* Funciones auxiliares */
 static int isSemaphoreCreated(char *namesem, int nameLength);
 static int getFreeSemaphore();
-/* static bool hasAccess(int sid); */
 static bool validateSID(int sid);
 
+
+/* Global initialization */
+void Init_Semaphores(void)
+{
+    unsigned int i = 0;
+    for (i=0; i<MAX_NUM_SEMAPHORES; ++i) {
+        g_Semaphores[i].available = true;
+        memset(g_Semaphores[i].name, '\0', MAX_SEMAPHORE_NAME+1);
+    }
+}
 
 int CreateSemaphore(char *name, int nameLength, int initCount)
 {
@@ -26,9 +35,10 @@ int CreateSemaphore(char *name, int nameLength, int initCount)
     int ret = -1;
 
     /* Contrato con la syscall */
-    KASSERT(name!=NULL && 0<nameLength && 0<=initCount &&
-        nameLength<=MAX_SEMAPHORE_NAME &&
-        strnlen(name, MAX_SEMAPHORE_NAME)==nameLength);
+    KASSERT(name!=NULL);
+    KASSERT(0<nameLength && nameLength<=MAX_SEMAPHORE_NAME);
+    KASSERT(0<=initCount);
+    KASSERT(strnlen(name, MAX_SEMAPHORE_NAME)==nameLength);
 
     bool atomic = Begin_Int_Atomic();
     sid = isSemaphoreCreated(name, nameLength);
@@ -37,42 +47,46 @@ int CreateSemaphore(char *name, int nameLength, int initCount)
     /* sid es negativo si no fue creado, de lo contrario
      * sid es el ID del semaforo ya creado
      */
-    if (0<=sid) { /* Semaforo ya creado */
-        g_Semaphore[sid].resourcesCount++;
+    if (0<=sid) { /* Already created semaphore */
+        g_Semaphores[sid].references++;
         Set_Bit(g_currentThread->semaphores, sid);
         ret = sid;
-    } else { /* Semaforo no creado. Crear */
+    } else { /* Semaphore not created. Create. */
         sid = getFreeSemaphore();
-        if (sid<0) { /* No hay semaforos disponibles */
+        if (sid<0) { /* No semaphores available */
             ret = EUNSPECIFIED;
         } else {
-            g_Semaphore[sid].available = false;
-            g_Semaphore[sid].resourcesCount++;
+            g_Semaphores[sid].available = false;
+            g_Semaphores[sid].references = 1;
             Set_Bit(g_currentThread->semaphores, sid);
             ret = sid;
         }
     }
-
     End_Int_Atomic(atomic);
+
     return ret;
 }
 
+/* Probeer te verlagen */
 int P(int sid)
 {
-    KASSERT(g_Semaphore[sid].available == false);
-
     if (!validateSID(sid)) {
         return EINVALID;
     }
 
     bool atomic = Begin_Int_Atomic();
-    g_Semaphore[sid].resourcesCount--;
-    Wait(&g_Semaphore[sid].waitingThreads);
+    if (g_Semaphores[sid].resources == 0) {
+        Wait(&g_Semaphores[sid].waitingThreads);
+        KASSERT(g_Semaphores[sid].resources == 1);
+    }
+    KASSERT(0 < g_Semaphores[sid].resources);
+    g_Semaphores[sid].resources--;
     End_Int_Atomic(atomic);
 
     return 0;
 }
 
+/* Verhogen */
 int V(int sid)
 {
     if (!validateSID(sid)) {
@@ -80,8 +94,10 @@ int V(int sid)
     }
 
     bool atomic = Begin_Int_Atomic();
-    g_Semaphore[sid].resourcesCount++;
-    Wake_Up(&g_Semaphore[sid].waitingThreads);
+    g_Semaphores[sid].resources++;
+    if (1==g_Semaphores[sid].resources) { /* from 0 to 1 we might wake up one */
+        Wake_Up_One(&g_Semaphores[sid].waitingThreads);
+    }
     End_Int_Atomic(atomic);
     return 0;
 }
@@ -93,10 +109,13 @@ int DestroySemaphore(int sid){
     }
 
     bool atomic = Begin_Int_Atomic();
-    g_Semaphore[sid].refCounter--;
+    g_Semaphores[sid].references--;
+    Clear_Bit(g_currentThread->semaphores, sid);
 
-    if (g_Semaphore[sid].refCounter == 0)
-        g_Semaphore[sid].available = true;
+    if (g_Semaphores[sid].references == 0) {
+        g_Semaphores[sid].available = true; /* mark it available */
+        Wake_Up(&g_Semaphores[sid].waitingThreads); /* wake all threads */
+    }
 
     End_Int_Atomic(atomic);
 
@@ -104,17 +123,14 @@ int DestroySemaphore(int sid){
 }
 
 
-/* --- Funciones auxiliares --- */
+/* Auxiliary functions */
 
 static bool validateSID(int sid) {
-    if (sid < 0 ||
-        sid >= MAX_NUM_SEMAPHORES ||
-        !g_Semaphore[sid].available ||
-        !Is_Bit_Set(g_currentThread->semaphores, sid))
-
-        return false;
-
-    return true; 
+    KASSERT(g_currentThread->semaphores != NULL);
+    return (0 <= sid
+            && sid < MAX_NUM_SEMAPHORES
+            && !g_Semaphores[sid].available
+            && Is_Bit_Set(g_currentThread->semaphores, sid));
 }
 
 static int isSemaphoreCreated(char *namesem, int lengthName)
@@ -123,7 +139,7 @@ static int isSemaphoreCreated(char *namesem, int lengthName)
     int ret = -1;
 
     for (sid = 0; sid < MAX_NUM_SEMAPHORES; sid++) {
-        if (strncmp(g_Semaphore[sid].name, namesem, lengthName) == 0) {
+        if (strncmp(g_Semaphores[sid].name, namesem, lengthName) == 0) {
             ret = sid;
             break;
         }
@@ -138,7 +154,7 @@ static int getFreeSemaphore()
     int ret = -1;
 
     for (sid = 0; sid < MAX_NUM_SEMAPHORES; sid++) {
-        if (g_Semaphore[sid].available) {
+        if (g_Semaphores[sid].available) {
             ret = sid;
             break;
         }

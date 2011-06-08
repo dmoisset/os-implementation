@@ -3,19 +3,20 @@
 #include <geekos/kthread.h>
 #include <geekos/list.h>
 
-#define MAX_NUM_SEMAPHORES  20
+#define MAX_NUM_SEMAPHORES 20
 #define MAX_SEMAPHORE_NAME 25
 
 struct Semaphore {
     char name[MAX_SEMAPHORE_NAME+1]; /* '\0' terminated */
-    unsigned int resourcesCount;
+    unsigned int resources;
     bool available;
-    unsigned int refCounter;
+    unsigned int references;
     struct Thread_Queue waitingThreads;
 };
 
 extern struct Semaphore g_Semaphores[MAX_NUM_SEMAPHORES];
 
+void Init_Semaphores(void);
 extern int CreateSemaphore(char *name, int nameLenght, int ival);
 int P(int sem);
 int V(int sem);

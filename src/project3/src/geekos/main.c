@@ -26,6 +26,7 @@
 #include <geekos/pfat.h>
 #include <geekos/vfs.h>
 #include <geekos/user.h>
+#include <geekos/sem.h>
 
 
 /*
@@ -63,6 +64,7 @@ void Main(struct Boot_Info* bootInfo)
     Init_CRC32();
     Init_TSS();
     Init_Interrupts();
+    Init_Semaphores();
     Init_Scheduler();
     Init_Traps();
     Init_Timer();
