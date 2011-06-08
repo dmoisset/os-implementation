@@ -183,7 +183,6 @@ static void Destroy_Thread(struct Kernel_Thread* kthread)
 
     /* Dispose of the thread's memory. */
     Disable_Interrupts();
-    unbindSemaphore(g_currentThread);
     Free_Page(kthread->stackPage);
     Free_Page(kthread);
 
