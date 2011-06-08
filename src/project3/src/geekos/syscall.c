@@ -248,7 +248,18 @@ static int Sys_GetPID(struct Interrupt_State* state)
  */
 static int Sys_SetSchedulingPolicy(struct Interrupt_State* state)
 {
-    TODO("SetSchedulingPolicy system call");
+    int policy = state->ebx;
+    int quantum = state->ecx;
+    
+    if(policy!=0 && policy!=1)return -1;
+    if(quantum<2 || quantum>100)return -1;
+    
+    if(g_currentSchedulingPolicy!=policy){
+        g_prevSchedulingPolicy=g_currentSchedulingPolicy;
+        g_currentSchedulingPolicy=policy;
+    }
+
+    g_Quantum=quantum;    
     return 0;
 }
 
