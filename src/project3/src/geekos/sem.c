@@ -23,37 +23,38 @@ static bool validateSID(int sid);
 void Init_Semaphores(void)
 {
     unsigned int i = 0;
-    for (i=0; i<MAX_NUM_SEMAPHORES; ++i) {
+    for (i = 0; i < MAX_NUM_SEMAPHORES; ++i) {
         g_Semaphores[i].available = true;
         memset(g_Semaphores[i].name, '\0', MAX_SEMAPHORE_NAME+1);
     }
 }
 
-int CreateSemaphore(char *name, int nameLength, int initCount)
+int Create_Semaphore(char *name, int nameLength, int initCount)
 {
     int sid = 0;
     int ret = -1;
 
     /* Contrato con la syscall */
-    KASSERT(name!=NULL);
-    KASSERT(0<nameLength && nameLength<=MAX_SEMAPHORE_NAME);
-    KASSERT(0<=initCount);
-    KASSERT(strnlen(name, MAX_SEMAPHORE_NAME)==nameLength);
+    KASSERT(name != NULL);
+    KASSERT(0 < nameLength && nameLength <= MAX_SEMAPHORE_NAME);
+    KASSERT(0 <= initCount);
+    KASSERT(strnlen(name, MAX_SEMAPHORE_NAME) == nameLength);
 
     bool atomic = Begin_Int_Atomic();
     sid = isSemaphoreCreated(name, nameLength);
-    KASSERT(sid<0 || sid<MAX_NUM_SEMAPHORES);
+    KASSERT(sid < 0 || sid < MAX_NUM_SEMAPHORES);
+    KASSERT(g_currentThread->semaphores != NULL);
 
     /* sid es negativo si no fue creado, de lo contrario
      * sid es el ID del semaforo ya creado
      */
-    if (0<=sid) { /* Already created semaphore */
+    if (0 <= sid) { /* Already created semaphore */
         g_Semaphores[sid].references++;
         Set_Bit(g_currentThread->semaphores, sid);
         ret = sid;
     } else { /* Semaphore not created. Create. */
         sid = getFreeSemaphore();
-        if (sid<0) { /* No semaphores available */
+        if (sid < 0) { /* No semaphores available */
             ret = EUNSPECIFIED;
         } else {
             g_Semaphores[sid].available = false;
@@ -95,20 +96,21 @@ int V(int sid)
 
     bool atomic = Begin_Int_Atomic();
     g_Semaphores[sid].resources++;
-    if (1==g_Semaphores[sid].resources) { /* from 0 to 1 we might wake up one */
+    if (g_Semaphores[sid].resources == 1) { /* from 0 to 1 we might wake up one */
         Wake_Up_One(&g_Semaphores[sid].waitingThreads);
     }
     End_Int_Atomic(atomic);
     return 0;
 }
 
-int DestroySemaphore(int sid){
+int Destroy_Semaphore(int sid){
 
     if (!validateSID(sid)) {
         return EINVALID;
     }
 
     bool atomic = Begin_Int_Atomic();
+    KASSERT(0 < g_Semaphores[sid].references);
     g_Semaphores[sid].references--;
     Clear_Bit(g_currentThread->semaphores, sid);
 
@@ -118,7 +120,6 @@ int DestroySemaphore(int sid){
     }
 
     End_Int_Atomic(atomic);
-
     return 0;
 }
 

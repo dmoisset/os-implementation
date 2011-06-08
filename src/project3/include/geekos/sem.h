@@ -17,7 +17,7 @@ struct Semaphore {
 extern struct Semaphore g_Semaphores[MAX_NUM_SEMAPHORES];
 
 void Init_Semaphores(void);
-extern int CreateSemaphore(char *name, int nameLenght, int ival);
+extern int Create_Semaphore(char *name, int nameLenght, int ival);
 int P(int sem);
 int V(int sem);
-int DestroySemaphore(int sem);
+int Destroy_Semaphore(int sem);
