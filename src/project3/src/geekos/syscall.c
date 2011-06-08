@@ -261,8 +261,7 @@ static int Sys_SetSchedulingPolicy(struct Interrupt_State* state)
  */
 static int Sys_GetTimeOfDay(struct Interrupt_State* state)
 {
-    TODO("GetTimeOfDay system call");
-    return 0;
+    return g_numTicks;
 }
 
 /*
