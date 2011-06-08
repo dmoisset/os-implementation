@@ -20,6 +20,7 @@
 #include <geekos/user.h>
 #include <geekos/timer.h>
 #include <geekos/vfs.h>
+#include <geekos/semaphore.h>
 
 /*
  * Null system call.
@@ -246,8 +247,19 @@ static int Sys_GetPID(struct Interrupt_State* state)
  */
 static int Sys_SetSchedulingPolicy(struct Interrupt_State* state)
 {
-    TODO("SetSchedulingPolicy system call");
-    return -1;
+    int policy = state->ebx;
+    int quantum = state->ecx;
+    
+    if(policy!=0 && policy!=1)return -1;
+    if(quantum<2 || quantum>100)return -1;
+    
+    if(g_currentSchedulingPolicy!=policy){
+        g_prevSchedulingPolicy=g_currentSchedulingPolicy;
+        g_currentSchedulingPolicy=policy;
+    }
+
+    g_Quantum=quantum;    
+    return 0;
 }
 
 /*
@@ -259,8 +271,7 @@ static int Sys_SetSchedulingPolicy(struct Interrupt_State* state)
  */
 static int Sys_GetTimeOfDay(struct Interrupt_State* state)
 {
-    TODO("GetTimeOfDay system call");
-    return -1;
+    return g_numTicks;
 }
 
 /*

@@ -17,6 +17,8 @@
 struct Kernel_Thread;
 struct User_Context;
 struct Interrupt_State;
+extern int g_currentSchedulingPolicy;
+extern int g_prevSchedulingPolicy;
 
 /*
  * Queue of threads.
