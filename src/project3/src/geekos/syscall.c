@@ -303,7 +303,7 @@ static int Sys_CreateSemaphore(struct Interrupt_State* state)
         return EINVALID;
     }
 
-    result = CreateSemaphore(name, nameLength, initCount);
+    result = Create_Semaphore(name, nameLength, initCount);
 
     return result;
 }
@@ -343,7 +343,7 @@ static int Sys_V(struct Interrupt_State* state)
  */
 static int Sys_DestroySemaphore(struct Interrupt_State* state)
 {
-    return DestroySemaphore(state->ebx);
+    return Destroy_Semaphore(state->ebx);
 }
 
 
