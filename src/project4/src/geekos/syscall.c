@@ -127,14 +127,7 @@ static int Sys_GetCursor(struct Interrupt_State* state)
     if (!Copy_To_User(state->ecx, &c, sizeof(int))) {
         return -1;
     }
-<<<<<<< HEAD
-<<<<<<< HEAD
     return 0;
-=======
->>>>>>> Merge con cambios de lab3
-=======
-    return 0;
->>>>>>> Some lines that I lost during merge
 }
 
 /*
