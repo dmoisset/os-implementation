@@ -174,8 +174,10 @@ static void Destroy_Thread(struct Kernel_Thread* kthread)
     Free_Page(kthread);
 
     /* Destroy associated semaphores */
+    KASSERT(kthread->semaphores != NULL);
     unsigned int sid = 0;
     for (sid = 0; sid < MAX_NUM_SEMAPHORES; ++sid) {
+            KASSERT(0 <= sid && sid < MAX_NUM_SEMAPHORES);
             if (Is_Bit_Set(kthread->semaphores, sid)) {
                 Destroy_Semaphore(sid);
             }

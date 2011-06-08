@@ -22,10 +22,10 @@ static bool validateSID(int sid);
 /* Global initialization */
 void Init_Semaphores(void)
 {
-    unsigned int i = 0;
-    for (i = 0; i < MAX_NUM_SEMAPHORES; ++i) {
-        g_Semaphores[i].available = true;
-        memset(g_Semaphores[i].name, '\0', MAX_SEMAPHORE_NAME+1);
+    unsigned int sid = 0;
+    for (sid = 0; sid < MAX_NUM_SEMAPHORES; ++sid) {
+        g_Semaphores[sid].available = true;
+        memset(g_Semaphores[sid].name, '\0', MAX_SEMAPHORE_NAME+1);
     }
 }
 
@@ -34,7 +34,7 @@ int Create_Semaphore(char *name, int nameLength, int initCount)
     int sid = 0;
     int ret = -1;
 
-    /* Contrato con la syscall */
+    /* Syscall contract */
     KASSERT(name != NULL);
     KASSERT(0 < nameLength && nameLength <= MAX_SEMAPHORE_NAME);
     KASSERT(0 <= initCount);
@@ -45,9 +45,7 @@ int Create_Semaphore(char *name, int nameLength, int initCount)
     KASSERT(sid < 0 || sid < MAX_NUM_SEMAPHORES);
     KASSERT(g_currentThread->semaphores != NULL);
 
-    /* sid es negativo si no fue creado, de lo contrario
-     * sid es el ID del semaforo ya creado
-     */
+    /* Negative sid for non existing, otherwise sid is Semaphore ID */
     if (0 <= sid) { /* Already created semaphore */
         g_Semaphores[sid].references++;
         Set_Bit(g_currentThread->semaphores, sid);
@@ -96,7 +94,8 @@ int V(int sid)
 
     bool atomic = Begin_Int_Atomic();
     g_Semaphores[sid].resources++;
-    if (g_Semaphores[sid].resources == 1) { /* from 0 to 1 we might wake up one */
+    if (g_Semaphores[sid].resources == 1) {
+        /* from 0 to 1 we might wake up one */
         Wake_Up_One(&g_Semaphores[sid].waitingThreads);
     }
     End_Int_Atomic(atomic);
