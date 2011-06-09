@@ -104,7 +104,7 @@ GENERATED_LIBC_SRCS := libc/errno.c
 # User program source files.
 USER_C_SRCS := \
 	workload.c \
-	semtest1.c semtest2.c p1.c p2.c p3.c \
+	semtest.c semtest1.c semtest2.c p1.c p2.c p3.c \
 	schedtest.c sched1.c sched2.c sched3.c \
 	ping.c pong.c long.c \
 	shell.c b.c c.c
