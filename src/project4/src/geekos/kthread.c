@@ -677,7 +677,7 @@ struct Kernel_Thread* Get_Next_Runnable(void)
             next = Get_Front_Of_Thread_Queue(&s_runQueue[i]);// no si usar (Find_Best(&s_runQueue[i])) porque me gusta mas ir rotando
             if (next != NULL){
                 Remove_Thread(&s_runQueue[i], next);
-                continue;
+                break;
             }
         }
     /* chequeo de procesos que no se ejecutan nunca */
