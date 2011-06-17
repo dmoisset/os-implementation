@@ -650,20 +650,18 @@ struct Kernel_Thread* Get_Next_Runnable(void)
 {
     struct Kernel_Thread * next = IdleThread;
     static ulong_t counterStarvationCheck=0;
-    
+
     KASSERT(g_currentSchedulingPolicy==RR || g_currentSchedulingPolicy==MLF); // schedule policy desconocido;
-    
+
     // si cambio de MLR a RR tengo que pegar las colas
-    if (g_currentSchedulingPolicy != g_prevSchedulingPolicy){
-        if (g_currentSchedulingPolicy == RR){
+    if (g_currentSchedulingPolicy != g_prevSchedulingPolicy) {
+        if (g_currentSchedulingPolicy == RR) {
             int i;
-            for (i=MAX_QUEUE_LEVEL-1; i>0; i--)
-            {
+            for (i=MAX_QUEUE_LEVEL-1; i>0; i--) {
                 Append_Thread_Queue(&s_runQueue[i-1],&s_runQueue[i]);
             }
-        }
-        else { //cambio de RR a MLF tengo todos los procesos en la primer cola, mando el Idle a la ultima
-            if(Is_Member_Of_Thread_Queue(&s_runQueue[0], IdleThread)) {
+        } else { //cambio de RR a MLF tengo todos los procesos en la primer cola, mando el Idle a la ultima
+            if (Is_Member_Of_Thread_Queue(&s_runQueue[0], IdleThread)) {
                 Remove_Thread(&s_runQueue[0], IdleThread);
                 Enqueue_Thread(&s_runQueue[MAX_QUEUE_LEVEL-1], IdleThread);
             }
@@ -673,10 +671,10 @@ struct Kernel_Thread* Get_Next_Runnable(void)
     /*
      * Round Robin
      */
-    
-    if (g_currentSchedulingPolicy==RR){
+
+    if (g_currentSchedulingPolicy == RR) {
         next = Find_Best(&s_runQueue[0]);
-        if(next != NULL){
+        if (next != NULL) {
             Remove_Thread(&s_runQueue[0], next);
         }
     }
@@ -686,44 +684,41 @@ struct Kernel_Thread* Get_Next_Runnable(void)
      */
     else {
         int i;
-        for(i=0; i<MAX_QUEUE_LEVEL; i++)
-        {
+        for (i=0; i<MAX_QUEUE_LEVEL; i++) {
             next = Get_Front_Of_Thread_Queue(&s_runQueue[i]);// no si usar (Find_Best(&s_runQueue[i])) porque me gusta mas ir rotando
-            if (next != NULL){
+            if (next != NULL) {
                 Remove_Thread(&s_runQueue[i], next);
                 continue;
             }
         }
     /* chequeo de procesos que no se ejecutan nunca */
         ++counterStarvationCheck;
-        if(counterStarvationCheck > TIME_TO_STARVATION_CHECK){
-            counterStarvationCheck=0;//comoienza a contar de nuevo el tiempo para el proximo chequeo
+        if (counterStarvationCheck > TIME_TO_STARVATION_CHECK) {
+            counterStarvationCheck=0; //comienza a contar de nuevo el tiempo para el proximo chequeo
             struct Kernel_Thread* checked_Thread=Get_Front_Of_Thread_Queue(&s_runQueue[MAX_QUEUE_LEVEL-1]);
-            for(i=MAX_QUEUE_LEVEL-1; i>=0;--i)
-            {
-                while(checked_Thread!=NULL)
-                {
-                    if(checked_Thread==IdleThread)break; /* si es el Idle, no lo muevo */
-                    if(checked_Thread->numTicks== starvation_mark){ 
+            for (i=MAX_QUEUE_LEVEL-1; i>=0; --i) {
+                while(checked_Thread != NULL) {
+                    if (checked_Thread == IdleThread) break; /* si es el Idle, no lo muevo */
+                    if (checked_Thread->numTicks == starvation_mark) {
                     /*si esta en -1 significa que no se ejecuto desde el ultimo chequeo, lo promociono un nivel de cola*/
-                        if(checked_Thread->currentReadyQueue>0){
+                        if (checked_Thread->currentReadyQueue > 0) {
                             --checked_Thread->currentReadyQueue;
                             Remove_Thread(&s_runQueue[i], checked_Thread);
                             Enqueue_Thread(&s_runQueue[i-1], checked_Thread);
                         }
-                    }
-                    else
+                    } else {
                         /* marco el hilo para saber si se ejecuto en el proximo chequeo */
-                        checked_Thread->numTicks=starvation_mark;               
+                        checked_Thread->numTicks=starvation_mark;
+                    }
 
                     checked_Thread = Get_Next_In_Thread_Queue(checked_Thread);
                 }
             }
-            
+
         }
     }
-    
-    next->numTicks=0; 
+
+    next->numTicks=0;
     /* no esta mas en lowlevel, lo pongo en cero aca,es importante 
     porque puede estar en marcado el chequeo de starvation
     y contaria mal los tick de ejecucion*/
