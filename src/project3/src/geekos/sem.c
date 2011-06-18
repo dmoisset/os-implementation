@@ -55,8 +55,11 @@ int Create_Semaphore(char *name, int nameLength, int initCount)
         if (sid < 0) { /* No semaphores available */
             ret = EUNSPECIFIED;
         } else {
+            strncpy(g_Semaphores[sid].name, name, MAX_SEMAPHORE_NAME);
+            g_Semaphores[sid].resources = initCount;
             g_Semaphores[sid].available = false;
             g_Semaphores[sid].references = 1;
+            Clear_Thread_Queue(&g_Semaphores[sid].waitingThreads);
             Set_Bit(g_currentThread->semaphores, sid);
             ret = sid;
         }
@@ -102,8 +105,8 @@ int V(int sid)
     return 0;
 }
 
-int Destroy_Semaphore(int sid){
-
+int Destroy_Semaphore(int sid)
+{
     if (!validateSID(sid)) {
         return EINVALID;
     }
